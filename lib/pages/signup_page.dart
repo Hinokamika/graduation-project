@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:final_project/services/user_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -51,33 +52,30 @@ class _SignUpPageState extends State<SignUpPage> {
         );
       }
 
+      // Create/Update user_identity row in Supabase
+      try {
+        await UserService().createOrUpdateUserIdentityFromSignup(
+          email: _emailController.text.trim(),
+          userName: _nameController.text.trim(),
+        );
+      } catch (_) {}
+
       if (mounted) {
-        // Navigate to survey page on successful signup
-        Navigator.of(context).pushReplacementNamed('/survey');
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'An error occurred';
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully! Please login.'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      switch (e.code) {
-        case 'weak-password':
-          message = 'The password provided is too weak.';
-          break;
-        case 'email-already-in-use':
-          message = 'An account already exists with this email.';
-          break;
-        case 'invalid-email':
-          message = 'The email address is not valid.';
-          break;
-        case 'operation-not-allowed':
-          message = 'Email/password accounts are not enabled.';
-          break;
-        default:
-          message = e.message ?? 'An error occurred during sign up.';
+        // Navigate to login page on successful signup
+        Navigator.of(context).pushReplacementNamed('/login');
       }
-
+    } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {

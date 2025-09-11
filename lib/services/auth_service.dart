@@ -1,106 +1,52 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 ValueNotifier<AuthService> authServiceProvider = ValueNotifier(AuthService());
 
 class AuthService {
-  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  User? get currentUser => firebaseAuth.currentUser;
+  User? get currentUser => _supabase.auth.currentUser;
 
-  Stream<User?> get authStateChanges => firebaseAuth.authStateChanges();
+  Stream<Session?> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) => event.session);
 
-  Future<UserCredential> signInWithEmailAndPassword({
+  Future<void> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
-    return await firebaseAuth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    await _supabase.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<UserCredential> createUserWithEmailAndPassword({
+  Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
-    return await firebaseAuth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    await _supabase.auth.signUp(email: email, password: password);
   }
 
   Future<void> signOut() async {
-    await firebaseAuth.signOut();
+    await _supabase.auth.signOut();
   }
 
   Future<void> resetPassword({required String email}) async {
-    await firebaseAuth.sendPasswordResetEmail(email: email);
+    await _supabase.auth.resetPasswordForEmail(email);
   }
 
   Future<void> deleteUser() async {
-    User? user = firebaseAuth.currentUser;
-    if (user != null) {
-      await user.delete();
-    }
+    // Supabase does not allow client-side user deletion via anon key.
+    // Implement via server-side function if needed.
+    throw UnimplementedError('Delete user requires a server function with service role.');
   }
 
   Future<void> updateUsername({required String username}) async {
-    User? user = firebaseAuth.currentUser;
-    if (user != null) {
-      await user.updateProfile(displayName: username);
-      await user.reload();
-    }
+    await _supabase.auth.updateUser(UserAttributes(data: {'full_name': username}));
   }
 
   Future<void> updateEmail({required String email}) async {
-    User? user = firebaseAuth.currentUser;
-    if (user != null) {
-      await user.verifyBeforeUpdateEmail(email);
-      await user.reload();
-    }
+    await _supabase.auth.updateUser(UserAttributes(email: email));
   }
 
   Future<void> updatePassword({required String password}) async {
-    User? user = firebaseAuth.currentUser;
-    if (user != null) {
-      await user.updatePassword(password);
-      await user.reload();
-    }
-  }
-
-  Future<void> deleteAccount({
-    required String email,
-    required String password,
-  }) async {
-    User? user = firebaseAuth.currentUser;
-    if (user != null) {
-      // Re-authenticate the user before deleting the account
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: email,
-        password: password,
-      );
-      await user.reauthenticateWithCredential(credential);
-      await user.delete();
-      await signOut();
-    }
-  }
-
-  Future<void> resetPasswordFromCurrentPassword({
-    required String currentPassword,
-    required String newPassword,
-    required String email,
-  }) async {
-    User? user = firebaseAuth.currentUser;
-    if (user != null) {
-      // Re-authenticate the user before updating the password
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: email,
-        password: currentPassword,
-      );
-      await user.reauthenticateWithCredential(credential);
-      await user.updatePassword(newPassword);
-      await user.reload();
-    }
+    await _supabase.auth.updateUser(UserAttributes(password: password));
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/services/user_service.dart';
+import 'package:final_project/pages/auth_options_page.dart';
 
 class SurveyPage extends StatefulWidget {
   const SurveyPage({super.key});
@@ -49,7 +52,7 @@ class _SurveyPageState extends State<SurveyPage> {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios,
+            CupertinoIcons.back,
             color: AppColors.textPrimary,
             size: 20,
           ),
@@ -329,7 +332,7 @@ class _SurveyPageState extends State<SurveyPage> {
     );
   }
 
-  void _submitSurvey() {
+  void _submitSurvey() async {
     if (_formKey.currentState?.validate() ?? false) {
       if (_selectedGender == null || _selectedActivityLevel == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -338,9 +341,68 @@ class _SurveyPageState extends State<SurveyPage> {
         return;
       }
 
-      // Here you would typically save the survey data
-      // For now, we'll just navigate to auth options
-      Navigator.of(context).pushNamed('/auth_options');
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saving your information...')),
+      );
+
+      try {
+        // Prepare survey data
+        final surveyData = {
+          'name': _nameController.text.trim(),
+          'age': int.tryParse(_ageController.text.trim()),
+          'gender': _selectedGender,
+          'height': double.tryParse(_heightController.text.trim()),
+          'weight': double.tryParse(_weightController.text.trim()),
+          'activity_level': _selectedActivityLevel,
+          'health_conditions': _healthConditions,
+          'created_at': DateTime.now().toIso8601String(),
+        };
+
+        // Save survey data using UserService
+        final userService = UserService();
+        await userService.saveSurveyData(surveyData);
+
+        // Hide loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+
+        // Show success toast then navigate
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile saved. Continue to sign in or create account.'),
+              backgroundColor: Colors.green,
+              duration: Duration(milliseconds: 1200),
+            ),
+          );
+
+          await Future.delayed(const Duration(milliseconds: 900));
+
+          if (!mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AuthOptionsPage(),
+            ),
+          );
+        }
+      } catch (e) {
+        // Hide loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+
+        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving survey data: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 

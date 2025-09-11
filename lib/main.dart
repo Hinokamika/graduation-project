@@ -5,16 +5,15 @@ import 'package:final_project/pages/auth_options_page.dart';
 import 'package:final_project/pages/signup_page.dart';
 import 'package:final_project/pages/login_page.dart';
 import 'package:final_project/pages/survey_page.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:final_project/pages/home_page.dart';
+import 'package:final_project/pages/user_page.dart';
+import 'package:final_project/pages/settings_page.dart';
+import 'package:final_project/widgets/auth_wrapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase first
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Default Supabase configuration
   String supabaseUrl = '';
@@ -27,7 +26,9 @@ void main() async {
     supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
     supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
   } catch (e) {
-    print('Using default config values (env file not found): $e');
+    // Using default config values (env file not found)
+    // In production, consider using a proper logging framework
+    debugPrint('Using default config values (env file not found): $e');
   }
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
@@ -97,11 +98,15 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const IntroPage(),
+        '/': (context) => const AuthWrapper(),
+        '/intro': (context) => const IntroPage(),
         '/survey': (context) => const SurveyPage(),
         '/auth_options': (context) => const AuthOptionsPage(),
         '/signup': (context) => const SignUpPage(),
         '/login': (context) => const LoginPage(),
+        '/home': (context) => const HomePage(),
+        '/user': (context) => const UserPage(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }

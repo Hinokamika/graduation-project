@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/services/user_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthOptionsPage extends StatelessWidget {
   const AuthOptionsPage({super.key});
@@ -16,7 +19,7 @@ class AuthOptionsPage extends StatelessWidget {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios,
+            CupertinoIcons.back,
             color: AppColors.textPrimary,
             size: 20,
           ),
@@ -30,6 +33,37 @@ class AuthOptionsPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Small banner if survey is completed but user not logged in
+              FutureBuilder<bool>(
+                future: _shouldShowOnboardingBanner(),
+                builder: (context, snapshot) {
+                  final show = snapshot.data == true;
+                  if (!show) return const SizedBox.shrink();
+                  return Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.info.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle_outline, color: AppColors.info, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Your profile info is saved. Sign in or create an account to continue.',
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               const Spacer(),
 
               // Welcome back message
@@ -122,4 +156,11 @@ class AuthOptionsPage extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<bool> _shouldShowOnboardingBanner() async {
+  final isLoggedIn = Supabase.instance.client.auth.currentUser != null;
+  if (isLoggedIn) return false;
+  final completed = await UserService().isOnboardingComplete();
+  return completed;
 }

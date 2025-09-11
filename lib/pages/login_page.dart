@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:final_project/services/user_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -41,35 +43,17 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
-        // Navigate to survey page on successful login
-        Navigator.of(context).pushReplacementNamed('/survey');
-      }
-    } on FirebaseAuthException catch (e) {
-      String message = 'An error occurred';
+        // Mark onboarding as complete
+        final userService = UserService();
+        await userService.markOnboardingComplete();
 
-      switch (e.code) {
-        case 'user-not-found':
-          message = 'No user found with this email address.';
-          break;
-        case 'wrong-password':
-          message = 'Wrong password provided.';
-          break;
-        case 'invalid-email':
-          message = 'The email address is not valid.';
-          break;
-        case 'user-disabled':
-          message = 'This user account has been disabled.';
-          break;
-        case 'too-many-requests':
-          message = 'Too many failed login attempts. Please try again later.';
-          break;
-        default:
-          message = e.message ?? 'An error occurred during sign in.';
+        // Navigate to home page on successful login
+        Navigator.of(context).pushReplacementNamed('/home');
       }
-
+    } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -101,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios,
+            CupertinoIcons.back,
             color: AppColors.textPrimary,
             size: 20,
           ),
