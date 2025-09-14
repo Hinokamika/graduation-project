@@ -20,8 +20,15 @@ class AuthService {
   Future<void> createUserWithEmailAndPassword({
     required String email,
     required String password,
+    String? fullName,
   }) async {
-    await _supabase.auth.signUp(email: email, password: password);
+    await _supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: fullName != null && fullName.trim().isNotEmpty
+          ? {'full_name': fullName.trim()}
+          : null,
+    );
   }
 
   Future<void> signOut() async {
@@ -32,10 +39,10 @@ class AuthService {
     await _supabase.auth.resetPasswordForEmail(email);
   }
 
-  Future<void> deleteUser() async {
-    // Supabase does not allow client-side user deletion via anon key.
-    // Implement via server-side function if needed.
-    throw UnimplementedError('Delete user requires a server function with service role.');
+  String? getCurrentUserEmail() {
+    final session = _supabase.auth.currentSession;
+    final user = session?.user;
+    return user?.email;
   }
 
   Future<void> updateUsername({required String username}) async {

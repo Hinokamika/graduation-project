@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/user_service.dart';
-import 'package:final_project/pages/auth_options_page.dart';
+import 'package:final_project/features/auth/auth_options_page.dart';
 
 class SurveyPage extends StatefulWidget {
   const SurveyPage({super.key});
@@ -133,6 +133,7 @@ class _SurveyPageState extends State<SurveyPage> {
               _buildSectionTitle('Health Metrics'),
               const SizedBox(height: 16),
 
+
               Row(
                 children: [
                   Expanded(
@@ -140,7 +141,7 @@ class _SurveyPageState extends State<SurveyPage> {
                       controller: _heightController,
                       label: 'Height (cm)',
                       icon: Icons.height,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: (value) {
                         if (value?.isEmpty ?? true) return 'Required';
                         final height = double.tryParse(value!);
@@ -157,7 +158,7 @@ class _SurveyPageState extends State<SurveyPage> {
                       controller: _weightController,
                       label: 'Weight (kg)',
                       icon: Icons.monitor_weight_outlined,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: (value) {
                         if (value?.isEmpty ?? true) return 'Required';
                         final weight = double.tryParse(value!);
@@ -405,6 +406,7 @@ class _SurveyPageState extends State<SurveyPage> {
       }
     }
   }
+
 
   @override
   void dispose() {

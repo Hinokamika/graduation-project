@@ -5,7 +5,7 @@ import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:final_project/services/user_service.dart';
-import 'package:final_project/pages/user_page.dart';
+import 'package:final_project/features/profile/user_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -442,7 +442,7 @@ class _SettingsPageState extends State<SettingsPage> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AppColors.accent,
+        activeThumbColor: AppColors.accent,
       ),
     );
   }

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:final_project/utils/app_colors.dart';
-import 'package:final_project/pages/intro_page.dart';
-import 'package:final_project/pages/auth_options_page.dart';
-import 'package:final_project/pages/signup_page.dart';
-import 'package:final_project/pages/login_page.dart';
-import 'package:final_project/pages/survey_page.dart';
-import 'package:final_project/pages/home_page.dart';
-import 'package:final_project/pages/user_page.dart';
-import 'package:final_project/pages/settings_page.dart';
+import 'package:final_project/features/onboarding/intro_page.dart';
+import 'package:final_project/features/auth/auth_options_page.dart';
+import 'package:final_project/features/auth/signup_page.dart';
+import 'package:final_project/features/auth/login_page.dart';
+import 'package:final_project/features/onboarding/survey_page.dart';
+import 'package:final_project/features/home/home_page.dart';
+import 'package:final_project/features/profile/user_page.dart';
+import 'package:final_project/features/settings/settings_page.dart';
 import 'package:final_project/widgets/auth_wrapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:final_project/services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,10 @@ void main() async {
   }
 
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  // Start background sync for offline -> online transitions
+  await UserService().startSyncListeners();
+  // Ask for Apple Health permissions on first launch (iOS only)
+  await UserService().requestHealthPermissionsAtFirstLaunch();
   runApp(const MyApp());
 }
 

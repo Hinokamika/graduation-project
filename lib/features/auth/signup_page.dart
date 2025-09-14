@@ -13,6 +13,7 @@ class SignUpPage extends StatefulWidget {
   State<SignUpPage> createState() => _SignUpPageState();
 }
 
+
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -39,25 +40,22 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      // Create user account
+      // Create user account with metadata to avoid requiring an active session
       await _authService.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
+        email: _emailController.text.trim().toLowerCase(),
         password: _passwordController.text,
+        fullName: _nameController.text.trim(),
       );
-
-      // Update display name
-      if (_nameController.text.isNotEmpty) {
-        await _authService.updateUsername(
-          username: _nameController.text.trim(),
-        );
-      }
 
       // Create/Update user_identity row in Supabase
       try {
-        await UserService().createOrUpdateUserIdentityFromSignup(
+        final userService = UserService();
+        await userService.createOrUpdateUserIdentityFromSignup(
           email: _emailController.text.trim(),
           userName: _nameController.text.trim(),
         );
+        // Also sync any locally saved survey data if a session exists
+        await userService.syncLocalSurveyToSupabase();
       } catch (_) {}
 
       if (mounted) {
@@ -142,19 +140,22 @@ class _SignUpPageState extends State<SignUpPage> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                autocorrect: false,
+                enableSuggestions: false,
+                textCapitalization: TextCapitalization.none,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r"\s")), // prevent spaces/newlines
+                ],
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
+                  final v = (value ?? '').trim();
+                  if (v.isEmpty) return 'Please enter your email';
+                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                  if (!emailRegex.hasMatch(v)) return 'Please enter a valid email';
                   return null;
                 },
               ),

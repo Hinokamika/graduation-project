@@ -41,15 +41,14 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      // Mark onboarding as complete and sync any local survey to Supabase
+      final userService = UserService();
+      await userService.markOnboardingComplete();
+      await userService.syncLocalSurveyToSupabase();
 
-      if (mounted) {
-        // Mark onboarding as complete
-        final userService = UserService();
-        await userService.markOnboardingComplete();
-
-        // Navigate to home page on successful login
-        Navigator.of(context).pushReplacementNamed('/home');
-      }
+      if (!mounted) return;
+      // Navigate to home page on successful login
+      Navigator.of(context).pushReplacementNamed('/home');
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -107,6 +106,13 @@ class _LoginPageState extends State<LoginPage> {
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                autocorrect: false,
+                enableSuggestions: false,
+                textCapitalization: TextCapitalization.none,
+                inputFormatters: [
+                  FilteringTextInputFormatter.deny(RegExp(r"\s")),
+                ],
                 enabled: !_isLoading,
                 style: AppTextStyles.input,
                 decoration: InputDecoration(
@@ -136,14 +142,10 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  ).hasMatch(value)) {
-                    return 'Please enter a valid email';
-                  }
+                  final v = (value ?? '').trim();
+                  if (v.isEmpty) return 'Please enter your email';
+                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                  if (!emailRegex.hasMatch(v)) return 'Please enter a valid email';
                   return null;
                 },
               ),

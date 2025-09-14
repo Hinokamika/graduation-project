@@ -1,14 +1,23 @@
-import 'package:hive/hive.dart';
+import 'dart:async';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'connectivity_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:final_project/services/health_service.dart';
 
 class UserService {
   static const String _userBoxName = 'userBox';
   static const String _onboardingKey = 'onboardingComplete';
   static const String _userIdentityIdKey = 'user_identity_id';
+  static const String _surveyDirtyKey = 'survey_dirty';
+  static const String _healthPermissionPromptedKey = 'health_permission_prompted';
 
   Box? _userBox;
   final SupabaseClient _supabase = Supabase.instance.client;
+  static bool _listenersStarted = false;
+  StreamSubscription<bool>? _connSub;
+  StreamSubscription<AuthState>? _authSub;
 
   UserService() {
     _initHive();
@@ -28,6 +37,69 @@ class UserService {
       await _initHive();
     }
     return _userBox!;
+  }
+
+  // Start background sync listeners for auth and connectivity
+  Future<void> startSyncListeners() async {
+    if (_listenersStarted) return;
+    _listenersStarted = true;
+    await _initHive();
+
+    // Connectivity changes
+    _connSub = ConnectivityService()
+        .onlineChanges
+        .listen((isOnline) async {
+          if (isOnline) await _attemptBackgroundSync();
+        });
+
+    // Auth changes
+    _authSub = _supabase.auth.onAuthStateChange.listen((event) async {
+      await _attemptBackgroundSync();
+    });
+
+    // Initial attempt
+    await _attemptBackgroundSync();
+  }
+
+  // Request Apple Health permissions on first app launch (iOS only)
+  Future<void> requestHealthPermissionsAtFirstLaunch() async {
+    // Only request on iOS devices (not web, not Android)
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+    try {
+      final box = await _getUserBox;
+      final prompted = box.get(_healthPermissionPromptedKey, defaultValue: false) == true;
+      if (prompted) return;
+
+      final health = HealthService();
+      var granted = await health.hasPermissions();
+      if (!granted) {
+        await health.requestPermissions();
+      }
+      await box.put(_healthPermissionPromptedKey, true);
+    } catch (e) {
+      try {
+        final box = await _getUserBox;
+        await box.put(_healthPermissionPromptedKey, true);
+      } catch (_) {}
+      print('Health permission prompt error: $e');
+    }
+  }
+
+  Future<void> _attemptBackgroundSync() async {
+    try {
+      final online = await ConnectivityService().isOnline();
+      if (!online) return;
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
+
+      final box = await _getUserBox;
+      final isDirty = box.get(_surveyDirtyKey, defaultValue: false) == true;
+      final hasLocalSurvey = box.get('survey_data') != null;
+      if (!isDirty && !hasLocalSurvey) return;
+
+      await syncLocalSurveyToSupabase();
+      await box.put(_surveyDirtyKey, false);
+    } catch (_) {}
   }
 
   // Check if user has completed onboarding
@@ -127,64 +199,148 @@ class UserService {
 
   // Save survey data
   Future<void> saveSurveyData(Map<String, dynamic> surveyData) async {
-    final user = _supabase.auth.currentUser;
     try {
       // Persist locally for offline reads
       final box = await _getUserBox;
       await box.put('survey_data', surveyData);
       await box.put(_onboardingKey, true);
+      await box.put(_surveyDirtyKey, true);
       print('Survey data saved locally');
+
+      // If not authenticated or offline, stop here. We'll sync later.
+      final user = _supabase.auth.currentUser;
+      final online = await ConnectivityService().isOnline();
+      if (user == null || !online) {
+        return;
+      }
 
       // Build payload mapped to user_identity columns
       final payload = <String, dynamic>{
         if (surveyData['name'] != null) 'user_name': surveyData['name'],
         if (surveyData['age'] != null) 'age': (surveyData['age'] as num?)?.toInt(),
         if (surveyData['gender'] != null) 'gender': surveyData['gender'],
-        if (surveyData['height'] != null) 'height': (surveyData['height'] as num?)?.toInt(),
-        if (surveyData['weight'] != null) 'weight': (surveyData['weight'] as num?)?.toInt(),
+        if (surveyData['height'] != null) 'height': (surveyData['height'] as num?)?.toDouble(),
+        if (surveyData['weight'] != null) 'weight': (surveyData['weight'] as num?)?.toDouble(),
         if (surveyData['activity_level'] != null)
           'activity_level': surveyData['activity_level'],
         if (surveyData['health_conditions'] != null)
-          'health_conditional': surveyData['health_conditions'],
+          'health_conditions': surveyData['health_conditions'],
       };
 
       // Insert or update on Supabase; if user exists, include identifiers
       try {
-        if (user != null) {
-          if (user.email?.isNotEmpty == true) payload['email'] = user.email;
-          if (user.id.isNotEmpty) payload['user_id'] = user.id;
-        }
+        if (user.email?.isNotEmpty == true) payload['email'] = user.email;
+        if (user.id.isNotEmpty) payload['user_id'] = user.id;
 
-        final existingId = box.get(_userIdentityIdKey) as int?;
-        if (existingId != null) {
-          await _supabase
+        // Deterministic update by user_id, else insert
+        Map<String, dynamic>? resp;
+        try {
+          final existingByUid = await _supabase
               .from('user_identity')
-              .update(payload)
-              .eq('id', existingId);
-        } else if (payload.containsKey('user_id')) {
-          final upserted = await _supabase
+              .select('id')
+              .eq('user_id', user.id)
+              .maybeSingle();
+          if (existingByUid != null && existingByUid['id'] != null) {
+            resp = await _supabase
+                .from('user_identity')
+                .update(payload)
+                .eq('user_id', user.id)
+                .select('id')
+                .maybeSingle();
+          } else {
+            resp = await _supabase
+                .from('user_identity')
+                .insert(payload)
+                .select('id')
+                .maybeSingle();
+          }
+        } catch (_) {
+          // Fallback to upsert for rare races
+          resp = await _supabase
               .from('user_identity')
               .upsert(payload, onConflict: 'user_id')
               .select('id')
               .maybeSingle();
-          if (upserted != null && upserted['id'] != null) {
-            await box.put(_userIdentityIdKey, upserted['id'] as int);
-          }
-        } else {
-          final inserted = await _supabase
-              .from('user_identity')
-              .insert(payload)
-              .select('id')
-              .maybeSingle();
-          if (inserted != null && inserted['id'] != null) {
-            await box.put(_userIdentityIdKey, inserted['id'] as int);
-          }
+        }
+        if (resp != null && resp['id'] != null) {
+          await box.put(_userIdentityIdKey, resp['id'] as int);
+          await box.put(_surveyDirtyKey, false);
         }
       } catch (e) {
         print('Supabase survey upsert failed (non-fatal): $e');
       }
     } catch (e) {
       print('Error saving survey data: $e');
+    }
+  }
+
+  // Sync previously saved local survey data to Supabase after user logs in
+  Future<void> syncLocalSurveyToSupabase() async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return; // requires authenticated session
+
+      final box = await _getUserBox;
+      final surveyData = box.get('survey_data');
+      if (surveyData == null) return; // nothing to sync
+
+      // Normalize to Map<String, dynamic>
+      final Map<String, dynamic> sd = surveyData is Map
+          ? Map<String, dynamic>.from(
+              surveyData.map((k, v) => MapEntry(k.toString(), v)),
+            )
+          : {};
+
+      final payload = <String, dynamic>{
+        if (sd['name'] != null) 'user_name': sd['name'],
+        if (sd['age'] != null) 'age': (sd['age'] as num?)?.toInt(),
+        if (sd['gender'] != null) 'gender': sd['gender'],
+        if (sd['height'] != null) 'height': (sd['height'] as num?)?.toDouble(),
+        if (sd['weight'] != null) 'weight': (sd['weight'] as num?)?.toDouble(),
+        if (sd['activity_level'] != null) 'activity_level': sd['activity_level'],
+        if (sd['health_conditions'] != null) 'health_conditions': sd['health_conditions'],
+        // identifiers
+        'user_id': user.id,
+        if (user.email?.isNotEmpty == true) 'email': user.email,
+      };
+
+      // Prefer deterministic update by user_id, then insert if missing
+      Map<String, dynamic>? resp;
+      try {
+        final existingByUid = await _supabase
+            .from('user_identity')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        if (existingByUid != null && existingByUid['id'] is int) {
+          resp = await _supabase
+              .from('user_identity')
+              .update(payload)
+              .eq('user_id', user.id)
+              .select('id')
+              .maybeSingle();
+        } else {
+          resp = await _supabase
+              .from('user_identity')
+              .insert(payload)
+              .select('id')
+              .maybeSingle();
+        }
+      } catch (e) {
+        // Fallback to upsert in case of race condition
+        resp = await _supabase
+            .from('user_identity')
+            .upsert(payload, onConflict: 'user_id')
+            .select('id')
+            .maybeSingle();
+      }
+
+      if (resp != null && resp['id'] is int) {
+        await box.put(_userIdentityIdKey, resp['id'] as int);
+        await box.put(_surveyDirtyKey, false);
+      }
+    } catch (e) {
+      print('Error syncing local survey to Supabase: $e');
     }
   }
 
@@ -198,7 +354,7 @@ class UserService {
       if (uid != null && uid.isNotEmpty) {
         final resp = await _supabase
             .from('user_identity')
-            .select('id,user_name,age,gender,height,weight,activity_level,health_conditional,email')
+            .select('id,user_name,age,gender,height,weight,activity_level,health_conditions,email')
             .eq('user_id', uid)
             .maybeSingle();
         if (resp != null) {
@@ -214,7 +370,7 @@ class UserService {
         if (localId != null) {
           final resp = await _supabase
               .from('user_identity')
-              .select('id,user_name,age,gender,height,weight,activity_level,health_conditional,email')
+              .select('id,user_name,age,gender,height,weight,activity_level,health_conditions,email')
               .eq('id', localId)
               .maybeSingle();
           if (resp != null) {
@@ -231,7 +387,7 @@ class UserService {
           'height': row['height'],
           'weight': row['weight'],
           'activity_level': row['activity_level'],
-          'health_conditions': row['health_conditional'],
+          'health_conditions': row['health_conditions'],
         };
         // Cache locally for faster subsequent reads
         await box.put('survey_data', survey);

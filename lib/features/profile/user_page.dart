@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/user_service.dart';
+import 'package:final_project/services/auth_service.dart';
 
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
@@ -16,6 +17,7 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   final UserService _userService = UserService();
   final SupabaseClient _supabase = Supabase.instance.client;
+  final AuthService _authService = AuthService();
   
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
@@ -35,8 +37,9 @@ class _UserPageState extends State<UserPage> {
         _userData = {
           ...?userProfile,
           'email': user?.email,
-          'display_name': user?.displayName,
-          'photo_url': user?.photoURL,
+          // Prefer values from Supabase user_metadata if present
+          'display_name': _extractDisplayName(user),
+          'photo_url': _extractPhotoUrl(user),
         };
         _isLoading = false;
       });
@@ -110,6 +113,18 @@ class _UserPageState extends State<UserPage> {
   Widget _buildProfileHeader() {
     final user = _supabase.auth.currentUser;
     
+    String? surveyName;
+    final dynamic surveyRaw = _userData?['survey_data'];
+    if (surveyRaw is Map) {
+      final nameValue = surveyRaw['name'];
+      if (nameValue is String && nameValue.trim().isNotEmpty) {
+        surveyName = nameValue;
+      }
+    }
+
+    final displayName = _extractDisplayName(user) ?? surveyName ?? 'User';
+    final photoUrl = _extractPhotoUrl(user) ?? (_userData?['photo_url'] as String?);
+
     return Center(
       child: Column(
         children: [
@@ -125,10 +140,10 @@ class _UserPageState extends State<UserPage> {
                 width: 2,
               ),
             ),
-            child: user?.photoURL != null
+            child: photoUrl != null && photoUrl.isNotEmpty
                 ? ClipOval(
                     child: Image.network(
-                      user!.photoURL!,
+                      photoUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(
@@ -150,7 +165,7 @@ class _UserPageState extends State<UserPage> {
           
           // User Name
           Text(
-            user?.displayName ?? _userData?['survey_data']?['name'] ?? 'User',
+            displayName,
             style: AppTextStyles.title.copyWith(
               color: AppColors.textPrimary,
             ),
@@ -205,7 +220,7 @@ class _UserPageState extends State<UserPage> {
         _buildInfoTile(
           icon: Icons.access_time_outlined,
           title: 'Last Login',
-          value: _formatDate(_supabase.auth.currentSession?.createdAt),
+          value: _formatDate(_supabase.auth.currentUser?.lastSignInAt),
         ),
       ],
     );
@@ -218,6 +233,34 @@ class _UserPageState extends State<UserPage> {
             rawSurvey.map((k, v) => MapEntry(k.toString(), v)),
           )
         : null;
+    final data = surveyData;
+    String? ageStr;
+    String? genderStr;
+    String? heightWeightStr;
+    String? activityStr;
+    String? conditionsStr;
+
+    if (data != null) {
+      final age = data['age'];
+      if (age != null) ageStr = '$age years';
+
+      final gender = data['gender'];
+      if (gender != null) genderStr = '$gender';
+
+      final height = data['height'];
+      final weight = data['weight'];
+      if (height != null && weight != null) {
+        heightWeightStr = '$height cm, $weight kg';
+      }
+
+      final act = data['activity_level'];
+      if (act != null) activityStr = '$act';
+
+      final hc = data['health_conditions'];
+      if (hc is List && hc.isNotEmpty) {
+        conditionsStr = hc.join(', ');
+      }
+    }
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,52 +275,51 @@ class _UserPageState extends State<UserPage> {
         const SizedBox(height: 16),
         
         // Age
-        if (surveyData?['age'] != null)
+        if (ageStr != null)
           _buildInfoTile(
             icon: Icons.cake_outlined,
             title: 'Age',
-            value: '${surveyData!['age']} years',
+            value: ageStr!,
           ),
         
         const SizedBox(height: 12),
         
         // Gender
-        if (surveyData?['gender'] != null)
+        if (genderStr != null)
           _buildInfoTile(
             icon: Icons.wc_outlined,
             title: 'Gender',
-            value: surveyData!['gender'],
+            value: genderStr!,
           ),
         
         const SizedBox(height: 12),
         
         // Height & Weight
-        if (surveyData?['height'] != null && surveyData?['weight'] != null)
+        if (heightWeightStr != null)
           _buildInfoTile(
             icon: Icons.height_outlined,
             title: 'Height & Weight',
-            value: '${surveyData!['height']} cm, ${surveyData!['weight']} kg',
+            value: heightWeightStr!,
           ),
         
         const SizedBox(height: 12),
         
         // Activity Level
-        if (surveyData?['activity_level'] != null)
+        if (activityStr != null)
           _buildInfoTile(
             icon: Icons.directions_run_outlined,
             title: 'Activity Level',
-            value: surveyData!['activity_level'],
+            value: activityStr!,
           ),
         
         const SizedBox(height: 12),
         
         // Health Conditions
-        if (surveyData?['health_conditions'] != null &&
-            (surveyData!['health_conditions'] as List).isNotEmpty)
+        if (conditionsStr != null)
           _buildInfoTile(
             icon: Icons.medical_information_outlined,
             title: 'Health Conditions',
-            value: (surveyData!['health_conditions'] as List).join(', '),
+            value: conditionsStr!,
           ),
       ],
     );
@@ -408,9 +450,16 @@ class _UserPageState extends State<UserPage> {
     );
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Not available';
-    return '${date.day}/${date.month}/${date.year}';
+  String _formatDate(dynamic dateOrIsoString) {
+    if (dateOrIsoString == null) return 'Not available';
+    DateTime? dt;
+    if (dateOrIsoString is DateTime) {
+      dt = dateOrIsoString;
+    } else if (dateOrIsoString is String) {
+      dt = DateTime.tryParse(dateOrIsoString);
+    }
+    if (dt == null) return 'Not available';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 
   Future<void> _handleLogout() async {
@@ -438,8 +487,8 @@ class _UserPageState extends State<UserPage> {
         // Clear local user data
         await _userService.clearLocalData();
         
-        // Sign out from Firebase
-        await _auth.signOut();
+        // Sign out from Supabase
+        await _authService.signOut();
         
         // Navigate to login page
         if (mounted) {
@@ -459,5 +508,30 @@ class _UserPageState extends State<UserPage> {
         }
       }
     }
+  }
+
+  // Helpers to safely read name and avatar from Supabase user_metadata
+  String? _extractDisplayName(User? user) {
+    final dynamic raw = user?.userMetadata;
+    if (raw is Map) {
+      final meta = Map<String, dynamic>.from(raw);
+      final dynamic candidate = meta['full_name'] ?? meta['display_name'] ?? meta['name'];
+      if (candidate is String && candidate.trim().isNotEmpty) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  String? _extractPhotoUrl(User? user) {
+    final dynamic raw = user?.userMetadata;
+    if (raw is Map) {
+      final meta = Map<String, dynamic>.from(raw);
+      final dynamic candidate = meta['avatar_url'] ?? meta['picture'] ?? meta['photo_url'];
+      if (candidate is String && candidate.trim().isNotEmpty) {
+        return candidate;
+      }
+    }
+    return null;
   }
 }

@@ -45,5 +45,16 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Allow network access (including non-HTTPS during development). Supabase uses HTTPS, so this is optional. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<!-- Apple HealthKit permissions -->
+	<key>NSHealthShareUsageDescription</key>
+	<string>This app reads your health data (like height, weight, steps) to personalize your experience.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>This app writes selected health data you choose to share.</string>
 </dict>
 </plist>
