@@ -279,7 +279,7 @@ class _UserPageState extends State<UserPage> {
           _buildInfoTile(
             icon: Icons.cake_outlined,
             title: 'Age',
-            value: ageStr!,
+            value: ageStr,
           ),
         
         const SizedBox(height: 12),
@@ -289,7 +289,7 @@ class _UserPageState extends State<UserPage> {
           _buildInfoTile(
             icon: Icons.wc_outlined,
             title: 'Gender',
-            value: genderStr!,
+            value: genderStr,
           ),
         
         const SizedBox(height: 12),
@@ -299,7 +299,7 @@ class _UserPageState extends State<UserPage> {
           _buildInfoTile(
             icon: Icons.height_outlined,
             title: 'Height & Weight',
-            value: heightWeightStr!,
+            value: heightWeightStr,
           ),
         
         const SizedBox(height: 12),
@@ -309,7 +309,7 @@ class _UserPageState extends State<UserPage> {
           _buildInfoTile(
             icon: Icons.directions_run_outlined,
             title: 'Activity Level',
-            value: activityStr!,
+            value: activityStr,
           ),
         
         const SizedBox(height: 12),
@@ -319,7 +319,7 @@ class _UserPageState extends State<UserPage> {
           _buildInfoTile(
             icon: Icons.medical_information_outlined,
             title: 'Health Conditions',
-            value: conditionsStr!,
+            value: conditionsStr,
           ),
       ],
     );

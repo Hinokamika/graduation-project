@@ -2,9 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/services/health_service.dart';
 
-class RelaxPage extends StatelessWidget {
+class RelaxPage extends StatefulWidget {
   const RelaxPage({super.key});
+
+  @override
+  State<RelaxPage> createState() => _RelaxPageState();
+}
+
+class _RelaxPageState extends State<RelaxPage> {
+  double? _avgHeartRate;
+  String _stressLabel = '—';
+  String _meditationSuggestion = '10 min';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWellnessSignals();
+  }
+
+  Future<void> _loadWellnessSignals() async {
+    try {
+      final health = HealthService();
+      final hr = await health.fetchTodayAverageHeartRate();
+      if (!mounted) return;
+      setState(() {
+        _avgHeartRate = hr;
+        _stressLabel = _computeStressLabel(hr);
+        _meditationSuggestion = _computeMeditationSuggestion(_stressLabel);
+      });
+    } catch (_) {
+      // leave defaults
+    }
+  }
+
+  String _computeStressLabel(double? hr) {
+    if (hr == null) return 'Unknown';
+    if (hr < 70) return 'Low';
+    if (hr < 90) return 'Moderate';
+    return 'High';
+  }
+
+  String _computeMeditationSuggestion(String stress) {
+    switch (stress) {
+      case 'High':
+        return '15 min';
+      case 'Moderate':
+        return '10 min';
+      case 'Low':
+        return '5 min';
+      default:
+        return '10 min';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +158,9 @@ class RelaxPage extends StatelessWidget {
               Expanded(
                 child: _buildWellnessStatCard(
                   title: 'Stress Level',
-                  value: 'Low',
+                  value: _avgHeartRate == null
+                      ? _stressLabel
+                      : '$_stressLabel (${_avgHeartRate!.toStringAsFixed(0)} bpm)',
                   color: AppColors.wellness,
                 ),
               ),
@@ -115,7 +168,7 @@ class RelaxPage extends StatelessWidget {
               Expanded(
                 child: _buildWellnessStatCard(
                   title: 'Meditation',
-                  value: '15 min',
+                  value: _meditationSuggestion,
                   color: AppColors.healthPrimary,
                 ),
               ),

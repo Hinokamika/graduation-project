@@ -12,6 +12,7 @@ import 'package:final_project/widgets/auth_wrapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:final_project/services/user_service.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,10 @@ void main() async {
   await UserService().startSyncListeners();
   // Ask for Apple Health permissions on first launch (iOS only)
   await UserService().requestHealthPermissionsAtFirstLaunch();
+  // Debug: print Hive box info at startup in debug builds
+  if (kDebugMode) {
+    await UserService().debugPrintHiveInfo();
+  }
   runApp(const MyApp());
 }
 

@@ -1,9 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/services/health_service.dart';
 
-class ExercisePage extends StatelessWidget {
+class ExercisePage extends StatefulWidget {
   const ExercisePage({super.key});
+
+  @override
+  State<ExercisePage> createState() => _ExercisePageState();
+}
+
+class _ExercisePageState extends State<ExercisePage> {
+  int? _stepsToday;
+  int? _steps7dTotal;
+  double? _activeEnergyKCal;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHealthStats();
+  }
+
+  Future<void> _loadHealthStats() async {
+    try {
+      final health = HealthService();
+      final todaySteps = await health.fetchTodaySteps();
+      final seven = await health.fetchStepsForLastDays(7);
+      final energy = await health.fetchTodayActiveEnergyKCal();
+      if (!mounted) return;
+      setState(() {
+        _stepsToday = todaySteps ?? 0;
+        _steps7dTotal = seven.fold<int>(0, (a, b) => a + b);
+        _activeEnergyKCal = energy ?? 0;
+      });
+    } catch (_) {
+      // Keep defaults when health access fails
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,18 +128,18 @@ class ExercisePage extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  title: 'This Week',
-                  value: '4/5',
-                  subtitle: 'Workouts',
+                  title: 'Steps (7d)',
+                  value: _formatInt(_steps7dTotal ?? 0),
+                  subtitle: 'Total',
                   color: AppColors.success,
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildStatCard(
-                  title: 'Calories',
-                  value: '2,450',
-                  subtitle: 'Burned',
+                  title: 'Active Energy',
+                  value: _formatKcal(_activeEnergyKCal ?? 0),
+                  subtitle: 'Today',
                   color: AppColors.warning,
                 ),
               ),
@@ -155,6 +188,22 @@ class ExercisePage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatInt(int n) {
+    final s = n.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      final idx = s.length - i;
+      buf.write(s[i]);
+      if (idx % 3 == 1 && i != s.length - 1) buf.write(',');
+    }
+    return buf.toString();
+  }
+
+  String _formatKcal(double v) {
+    final rounded = v.round();
+    return '${_formatInt(rounded)} kcal';
   }
 
   Widget _buildTodaysWorkout() {

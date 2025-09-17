@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'connectivity_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:final_project/services/health_service.dart';
@@ -12,6 +11,8 @@ class UserService {
   static const String _userIdentityIdKey = 'user_identity_id';
   static const String _surveyDirtyKey = 'survey_dirty';
   static const String _healthPermissionPromptedKey = 'health_permission_prompted';
+  static const String _nutritionGoalKey = 'nutrition_goal'; // 'lose' | 'maintain' | 'gain'
+  static const String _nutritionGoalDeltaKey = 'nutrition_goal_delta'; // 10 | 15 | 20
 
   Box? _userBox;
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -421,6 +422,30 @@ class UserService {
     await box.clear();
   }
 
+  // Nutrition goal preferences
+  Future<String> getNutritionGoal() async {
+    final box = await _getUserBox;
+    return (box.get(_nutritionGoalKey) as String?) ?? 'maintain';
+  }
+
+  Future<void> setNutritionGoal(String goal) async {
+    final box = await _getUserBox;
+    await box.put(_nutritionGoalKey, goal);
+  }
+
+  Future<int> getNutritionGoalDelta() async {
+    final box = await _getUserBox;
+    final v = box.get(_nutritionGoalDeltaKey);
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return 15;
+  }
+
+  Future<void> setNutritionGoalDelta(int percent) async {
+    final box = await _getUserBox;
+    await box.put(_nutritionGoalDeltaKey, percent);
+  }
+
   // Check if user profile exists in Supabase
   Future<bool> doesUserProfileExist() async {
     try {
@@ -438,6 +463,39 @@ class UserService {
       return surveyData != null;
     } catch (e) {
       return false;
+    }
+  }
+
+  // Debug: print Hive user box path and contents
+  Future<void> debugPrintHiveInfo() async {
+    try {
+      final box = await _getUserBox;
+
+      // Box metadata
+      print('Hive box name: ${box.name}');
+      print('Hive box length: ${box.length}');
+
+      // Try to print underlying filesystem path when available (not on web)
+      try {
+        // Box.path exists on supported platforms. On web this may throw.
+        final dynamic b = box; // avoid hard dependency if path is absent
+        final path = b.path as String?; // may be null on some platforms
+        if (path != null) {
+          print('Hive box path: $path');
+        } else {
+          print('Hive storage path: <not available> (web/IndexedDB or unsupported)');
+        }
+      } catch (_) {
+        print('Hive storage path: <not available> (web/IndexedDB or unsupported)');
+      }
+
+      // Print keys and values
+      for (final key in box.keys) {
+        final value = box.get(key);
+        print('Hive entry -> $key: $value');
+      }
+    } catch (e) {
+      print('Error printing Hive debug info: $e');
     }
   }
 }

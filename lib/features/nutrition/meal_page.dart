@@ -2,9 +2,111 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/services/health_service.dart';
+import 'package:final_project/services/user_service.dart';
+import 'package:final_project/utils/nutrition_calculator.dart';
 
-class MealPage extends StatelessWidget {
+class MealPage extends StatefulWidget {
   const MealPage({super.key});
+
+  @override
+  State<MealPage> createState() => _MealPageState();
+}
+
+class _MealPageState extends State<MealPage> {
+  double _energyKcal = 0;
+  double _carbsG = 0;
+  double _proteinG = 0;
+  double _fatG = 0;
+
+  // Simple daily targets (can be made dynamic later)
+  double _targetKcal = 2200;
+  double _targetCarbs = 275;
+  double _targetProtein = 90;
+  double _targetFat = 73;
+  bool _targetsFromProfile = false;
+  String _goal = 'maintain';
+  int _goalDelta = 15; // percent
+  Map<String, dynamic>? _survey;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodayNutrition();
+    _loadTargetsFromProfile();
+    _loadGoalPrefs();
+  }
+
+  Future<void> _loadTodayNutrition() async {
+    try {
+      final map = await HealthService().fetchTodayNutrition();
+      if (!mounted) return;
+      setState(() {
+        _energyKcal = (map['energy_kcal'] ?? 0).toDouble();
+        _carbsG = (map['carbs_g'] ?? 0).toDouble();
+        _proteinG = (map['protein_g'] ?? 0).toDouble();
+        _fatG = (map['fat_g'] ?? 0).toDouble();
+      });
+    } catch (_) {
+      // leave defaults
+    }
+  }
+
+  Future<void> _loadTargetsFromProfile() async {
+    try {
+      final profile = await UserService().getUserProfile();
+      final survey = (profile?['survey_data'] is Map)
+          ? Map<String, dynamic>.from(profile!['survey_data'] as Map)
+          : null;
+      if (survey == null) return;
+      _survey = survey;
+
+      final targets = NutritionCalculator.computeTargetsFromSurvey(
+        survey,
+        goal: _goal,
+        deltaPercent: _goalDelta,
+      );
+      if (!mounted) return;
+      setState(() {
+        _targetsFromProfile = true;
+        _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+        _targetProtein = (targets['protein_g'] ?? _targetProtein).toDouble();
+        _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+        _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+      });
+    } catch (_) {
+      // ignore errors and keep defaults
+    }
+  }
+
+  Future<void> _loadGoalPrefs() async {
+    try {
+      final svc = UserService();
+      final g = await svc.getNutritionGoal();
+      final d = await svc.getNutritionGoalDelta();
+      if (!mounted) return;
+      setState(() {
+        _goal = g;
+        _goalDelta = d;
+      });
+      // Recompute if survey loaded
+      if (_survey != null) {
+        final targets = NutritionCalculator.computeTargetsFromSurvey(
+          _survey!,
+          goal: _goal,
+          deltaPercent: _goalDelta,
+        );
+        if (!mounted) return;
+        setState(() {
+          _targetsFromProfile = true;
+          _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+          _targetProtein = (targets['protein_g'] ?? _targetProtein).toDouble();
+          _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+          _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,8 +203,8 @@ class MealPage extends StatelessWidget {
               Expanded(
                 child: _buildNutritionStatCard(
                   title: 'Calories',
-                  value: '1,650',
-                  target: '2,200',
+                  value: _energyKcal.toStringAsFixed(0),
+                  target: _targetKcal.toStringAsFixed(0),
                   color: AppColors.warning,
                 ),
               ),
@@ -110,13 +212,15 @@ class MealPage extends StatelessWidget {
               Expanded(
                 child: _buildNutritionStatCard(
                   title: 'Protein',
-                  value: '68g',
-                  target: '90g',
+                  value: '${_proteinG.toStringAsFixed(0)}g',
+                  target: '${_targetProtein.toStringAsFixed(0)}g',
                   color: AppColors.accent,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          _buildGoalSelector(),
         ],
       ),
     );
@@ -128,8 +232,8 @@ class MealPage extends StatelessWidget {
     required String target,
     required Color color,
   }) {
-    final valueNum = double.tryParse(value) ?? 0;
-    final targetNum = double.tryParse(target) ?? 1;
+    final valueNum = double.tryParse(value.replaceAll(RegExp(r'[^0-9\.]'), '')) ?? 0;
+    final targetNum = double.tryParse(target.replaceAll(RegExp(r'[^0-9\.]'), '')) ?? 1;
     final progress = valueNum / targetNum;
     
     return Container(
@@ -193,34 +297,40 @@ class MealPage extends StatelessWidget {
             children: [
               _buildMacroRow(
                 title: 'Carbohydrates',
-                value: '210g',
-                target: '275g',
+                value: '${_carbsG.toStringAsFixed(0)}g',
+                target: '${_targetCarbs.toStringAsFixed(0)}g',
                 color: AppColors.info,
-                progress: 0.76,
+                progress: (_targetCarbs == 0)
+                    ? 0.0
+                    : (_carbsG / _targetCarbs).clamp(0.0, 1.0),
               ),
               const SizedBox(height: 16),
               _buildMacroRow(
                 title: 'Protein',
-                value: '68g',
-                target: '90g',
+                value: '${_proteinG.toStringAsFixed(0)}g',
+                target: '${_targetProtein.toStringAsFixed(0)}g',
                 color: AppColors.accent,
-                progress: 0.76,
+                progress: (_targetProtein == 0)
+                    ? 0.0
+                    : (_proteinG / _targetProtein).clamp(0.0, 1.0),
               ),
               const SizedBox(height: 16),
               _buildMacroRow(
                 title: 'Fat',
-                value: '45g',
-                target: '73g',
+                value: '${_fatG.toStringAsFixed(0)}g',
+                target: '${_targetFat.toStringAsFixed(0)}g',
                 color: AppColors.warning,
-                progress: 0.62,
+                progress: (_targetFat == 0)
+                    ? 0.0
+                    : (_fatG / _targetFat).clamp(0.0, 1.0),
               ),
               const SizedBox(height: 16),
               _buildMacroRow(
                 title: 'Fiber',
-                value: '18g',
+                value: '—',
                 target: '25g',
                 color: AppColors.success,
-                progress: 0.72,
+                progress: 0.0,
               ),
             ],
           ),
@@ -681,5 +791,89 @@ class MealPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildGoalSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Goal',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            _goalChip('Lose'),
+            const SizedBox(width: 8),
+            _goalChip('Maintain'),
+            const SizedBox(width: 8),
+            _goalChip('Gain'),
+            const Spacer(),
+            if (_goal.toLowerCase() != 'maintain') _deltaChips(),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _goalChip(String label) {
+    final v = label.toLowerCase();
+    final selected = _goal == v;
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (s) async {
+        if (!s) return;
+        setState(() => _goal = v);
+        await UserService().setNutritionGoal(v);
+        if (_survey != null) {
+          final targets = NutritionCalculator.computeTargetsFromSurvey(
+            _survey!,
+            goal: _goal,
+            deltaPercent: _goalDelta,
+          );
+          if (!mounted) return;
+          setState(() {
+            _targetsFromProfile = true;
+            _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+            _targetProtein = (targets['protein_g'] ?? _targetProtein).toDouble();
+            _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+            _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+          });
+        }
+      },
+    );
+  }
+
+  Widget _deltaChips() {
+    Widget chip(int p) => Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: ChoiceChip(
+            label: Text('$p%'),
+            selected: _goalDelta == p,
+            onSelected: (s) async {
+              if (!s) return;
+              setState(() => _goalDelta = p);
+              await UserService().setNutritionGoalDelta(p);
+              if (_survey != null) {
+                final targets = NutritionCalculator.computeTargetsFromSurvey(
+                  _survey!,
+                  goal: _goal,
+                  deltaPercent: _goalDelta,
+                );
+                if (!mounted) return;
+                setState(() {
+                  _targetsFromProfile = true;
+                  _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+                  _targetProtein = (targets['protein_g'] ?? _targetProtein).toDouble();
+                  _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+                  _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+                });
+              }
+            },
+          ),
+        );
+    return Row(children: [chip(10), chip(15), chip(20)]);
   }
 }
