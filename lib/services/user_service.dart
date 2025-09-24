@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'connectivity_service.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:final_project/services/health_service.dart';
 
 class UserService {
@@ -10,9 +11,12 @@ class UserService {
   static const String _onboardingKey = 'onboardingComplete';
   static const String _userIdentityIdKey = 'user_identity_id';
   static const String _surveyDirtyKey = 'survey_dirty';
-  static const String _healthPermissionPromptedKey = 'health_permission_prompted';
-  static const String _nutritionGoalKey = 'nutrition_goal'; // 'lose' | 'maintain' | 'gain'
-  static const String _nutritionGoalDeltaKey = 'nutrition_goal_delta'; // 10 | 15 | 20
+  static const String _healthPermissionPromptedKey =
+      'health_permission_prompted';
+  static const String _nutritionGoalKey =
+      'nutrition_goal'; // 'lose' | 'maintain' | 'gain'
+  static const String _nutritionGoalDeltaKey =
+      'nutrition_goal_delta'; // 10 | 15 | 20
 
   Box? _userBox;
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -47,11 +51,9 @@ class UserService {
     await _initHive();
 
     // Connectivity changes
-    _connSub = ConnectivityService()
-        .onlineChanges
-        .listen((isOnline) async {
-          if (isOnline) await _attemptBackgroundSync();
-        });
+    _connSub = ConnectivityService().onlineChanges.listen((isOnline) async {
+      if (isOnline) await _attemptBackgroundSync();
+    });
 
     // Auth changes
     _authSub = _supabase.auth.onAuthStateChange.listen((event) async {
@@ -68,7 +70,8 @@ class UserService {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
     try {
       final box = await _getUserBox;
-      final prompted = box.get(_healthPermissionPromptedKey, defaultValue: false) == true;
+      final prompted =
+          box.get(_healthPermissionPromptedKey, defaultValue: false) == true;
       if (prompted) return;
 
       final health = HealthService();
@@ -146,12 +149,16 @@ class UserService {
       final box = await _getUserBox;
       final existingLocalId = box.get(_userIdentityIdKey) as int?;
       if (existingLocalId != null) {
-        await _supabase.from('user_identity').update({
-          'email': email,
-          'user_name': userName,
-          if (phone != null && phone.isNotEmpty) 'phone': phone,
-          if (_supabase.auth.currentUser?.id != null) 'user_id': _supabase.auth.currentUser!.id,
-        }).eq('id', existingLocalId);
+        await _supabase
+            .from('user_identity')
+            .update({
+              'email': email,
+              'user_name': userName,
+              if (phone != null && phone.isNotEmpty) 'phone': phone,
+              if (_supabase.auth.currentUser?.id != null)
+                'user_id': _supabase.auth.currentUser!.id,
+            })
+            .eq('id', existingLocalId);
         return;
       }
 
@@ -164,11 +171,14 @@ class UserService {
             .eq('user_id', uid)
             .maybeSingle();
         if (existingByUid != null) {
-          await _supabase.from('user_identity').update({
-            'email': email,
-            'user_name': userName,
-            if (phone != null && phone.isNotEmpty) 'phone': phone,
-          }).eq('user_id', uid);
+          await _supabase
+              .from('user_identity')
+              .update({
+                'email': email,
+                'user_name': userName,
+                if (phone != null && phone.isNotEmpty) 'phone': phone,
+              })
+              .eq('user_id', uid);
           return;
         }
       }
@@ -188,10 +198,13 @@ class UserService {
           if (phone != null && phone.isNotEmpty) 'phone': phone,
         });
       } else {
-        await _supabase.from('user_identity').update({
-          'user_name': userName,
-          if (phone != null && phone.isNotEmpty) 'phone': phone,
-        }).eq('email', email);
+        await _supabase
+            .from('user_identity')
+            .update({
+              'user_name': userName,
+              if (phone != null && phone.isNotEmpty) 'phone': phone,
+            })
+            .eq('email', email);
       }
     } catch (e) {
       print('Error syncing user_identity (signup): $e');
@@ -218,10 +231,13 @@ class UserService {
       // Build payload mapped to user_identity columns
       final payload = <String, dynamic>{
         if (surveyData['name'] != null) 'user_name': surveyData['name'],
-        if (surveyData['age'] != null) 'age': (surveyData['age'] as num?)?.toInt(),
+        if (surveyData['age'] != null)
+          'age': (surveyData['age'] as num?)?.toInt(),
         if (surveyData['gender'] != null) 'gender': surveyData['gender'],
-        if (surveyData['height'] != null) 'height': (surveyData['height'] as num?)?.toDouble(),
-        if (surveyData['weight'] != null) 'weight': (surveyData['weight'] as num?)?.toDouble(),
+        if (surveyData['height'] != null)
+          'height': (surveyData['height'] as num?)?.toDouble(),
+        if (surveyData['weight'] != null)
+          'weight': (surveyData['weight'] as num?)?.toDouble(),
         if (surveyData['activity_level'] != null)
           'activity_level': surveyData['activity_level'],
         if (surveyData['health_conditions'] != null)
@@ -298,8 +314,10 @@ class UserService {
         if (sd['gender'] != null) 'gender': sd['gender'],
         if (sd['height'] != null) 'height': (sd['height'] as num?)?.toDouble(),
         if (sd['weight'] != null) 'weight': (sd['weight'] as num?)?.toDouble(),
-        if (sd['activity_level'] != null) 'activity_level': sd['activity_level'],
-        if (sd['health_conditions'] != null) 'health_conditions': sd['health_conditions'],
+        if (sd['activity_level'] != null)
+          'activity_level': sd['activity_level'],
+        if (sd['health_conditions'] != null)
+          'health_conditions': sd['health_conditions'],
         // identifiers
         'user_id': user.id,
         if (user.email?.isNotEmpty == true) 'email': user.email,
@@ -355,7 +373,9 @@ class UserService {
       if (uid != null && uid.isNotEmpty) {
         final resp = await _supabase
             .from('user_identity')
-            .select('id,user_name,age,gender,height,weight,activity_level,health_conditions,email')
+            .select(
+              'id,user_name,age,gender,height,weight,activity_level,health_conditions,email',
+            )
             .eq('user_id', uid)
             .maybeSingle();
         if (resp != null) {
@@ -371,7 +391,9 @@ class UserService {
         if (localId != null) {
           final resp = await _supabase
               .from('user_identity')
-              .select('id,user_name,age,gender,height,weight,activity_level,health_conditions,email')
+              .select(
+                'id,user_name,age,gender,height,weight,activity_level,health_conditions,email',
+              )
               .eq('id', localId)
               .maybeSingle();
           if (resp != null) {
@@ -483,10 +505,14 @@ class UserService {
         if (path != null) {
           print('Hive box path: $path');
         } else {
-          print('Hive storage path: <not available> (web/IndexedDB or unsupported)');
+          print(
+            'Hive storage path: <not available> (web/IndexedDB or unsupported)',
+          );
         }
       } catch (_) {
-        print('Hive storage path: <not available> (web/IndexedDB or unsupported)');
+        print(
+          'Hive storage path: <not available> (web/IndexedDB or unsupported)',
+        );
       }
 
       // Print keys and values

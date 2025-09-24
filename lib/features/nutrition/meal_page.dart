@@ -120,23 +120,23 @@ class _MealPageState extends State<MealPage> {
             // Header
             _buildHeader(),
             const SizedBox(height: 32),
-            
+
             // Daily Nutrition Summary
             _buildDailyNutrition(),
             const SizedBox(height: 32),
-            
+
             // Today's Meals
             _buildTodaysMeals(),
             const SizedBox(height: 32),
-            
+
             // Meal Plans
             _buildMealPlans(),
             const SizedBox(height: 32),
-            
+
             // Water Intake
             _buildWaterIntake(),
             const SizedBox(height: 32),
-            
+
             // Nutrition Tips
             _buildNutritionTips(),
           ],
@@ -179,7 +179,9 @@ class _MealPageState extends State<MealPage> {
                   Text(
                     'Fuel Your Body Right',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -234,10 +236,12 @@ class _MealPageState extends State<MealPage> {
     required String target,
     required Color color,
   }) {
-    final valueNum = double.tryParse(value.replaceAll(RegExp(r'[^0-9\.]'), '')) ?? 0;
-    final targetNum = double.tryParse(target.replaceAll(RegExp(r'[^0-9\.]'), '')) ?? 1;
+    final valueNum =
+        double.tryParse(value.replaceAll(RegExp(r'[^0-9\.]'), '')) ?? 0;
+    final targetNum =
+        double.tryParse(target.replaceAll(RegExp(r'[^0-9\.]'), '')) ?? 1;
     final progress = valueNum / targetNum;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -277,10 +281,7 @@ class _MealPageState extends State<MealPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Today's Nutrition",
-          style: AppTextStyles.subtitle,
-        ),
+        Text("Today's Nutrition", style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -371,15 +372,15 @@ class _MealPageState extends State<MealPage> {
             textAlign: TextAlign.center,
           ),
         ),
-          Expanded(
-            flex: 2,
-            child: LinearProgressIndicator(
-              value: progress,
+        Expanded(
+          flex: 2,
+          child: LinearProgressIndicator(
+            value: progress,
             backgroundColor: Theme.of(context).dividerColor,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              borderRadius: BorderRadius.circular(4),
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            borderRadius: BorderRadius.circular(4),
           ),
+        ),
       ],
     );
   }
@@ -388,10 +389,7 @@ class _MealPageState extends State<MealPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Today's Meals",
-          style: AppTextStyles.subtitle,
-        ),
+        Text("Today's Meals", style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
@@ -474,7 +472,9 @@ class _MealPageState extends State<MealPage> {
         ),
         child: Icon(
           completed ? CupertinoIcons.check_mark : CupertinoIcons.circle,
-          color: completed ? color : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          color: completed
+              ? color
+              : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           size: 20,
         ),
       ),
@@ -515,10 +515,7 @@ class _MealPageState extends State<MealPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Meal Plans',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Meal Plans', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -600,11 +597,7 @@ class _MealPageState extends State<MealPage> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 12),
           Text(
@@ -638,10 +631,7 @@ class _MealPageState extends State<MealPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Water Intake',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Water Intake', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -685,7 +675,9 @@ class _MealPageState extends State<MealPage> {
               LinearProgressIndicator(
                 value: 0.72,
                 backgroundColor: Theme.of(context).dividerColor,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.healthPrimary),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.healthPrimary,
+                ),
                 borderRadius: BorderRadius.circular(8),
                 minHeight: 12,
               ),
@@ -727,10 +719,7 @@ class _MealPageState extends State<MealPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Nutrition Tips',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Nutrition Tips', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
@@ -754,21 +743,24 @@ class _MealPageState extends State<MealPage> {
               _buildTipItem(
                 icon: CupertinoIcons.lightbulb,
                 title: 'Stay Hydrated',
-                description: 'Drink at least 8 glasses of water daily for optimal body function.',
+                description:
+                    'Drink at least 8 glasses of water daily for optimal body function.',
                 color: AppColors.info,
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: CupertinoIcons.heart_fill,
                 title: 'Eat More Fruits',
-                description: 'Aim for 5 servings of fruits and vegetables daily.',
+                description:
+                    'Aim for 5 servings of fruits and vegetables daily.',
                 color: AppColors.success,
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: CupertinoIcons.moon,
                 title: 'Don\'t Skip Meals',
-                description: 'Regular meals help maintain stable blood sugar levels.',
+                description:
+                    'Regular meals help maintain stable blood sugar levels.',
                 color: AppColors.warning,
               ),
             ],
@@ -792,11 +784,7 @@ class _MealPageState extends State<MealPage> {
           color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 20,
-        ),
+        child: Icon(icon, color: color, size: 20),
       ),
       title: Text(
         title,
@@ -807,9 +795,7 @@ class _MealPageState extends State<MealPage> {
       ),
       subtitle: Text(
         description,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
       ),
     );
   }
@@ -820,7 +806,9 @@ class _MealPageState extends State<MealPage> {
       children: [
         Text(
           'Goal',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 8),
         Row(
@@ -858,7 +846,8 @@ class _MealPageState extends State<MealPage> {
           setState(() {
             _targetsFromProfile = true;
             _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
-            _targetProtein = (targets['protein_g'] ?? _targetProtein).toDouble();
+            _targetProtein = (targets['protein_g'] ?? _targetProtein)
+                .toDouble();
             _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
             _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
           });
@@ -869,32 +858,33 @@ class _MealPageState extends State<MealPage> {
 
   Widget _deltaChips() {
     Widget chip(int p) => Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: ChoiceChip(
-            label: Text('$p%'),
-            selected: _goalDelta == p,
-            onSelected: (s) async {
-              if (!s) return;
-              setState(() => _goalDelta = p);
-              await UserService().setNutritionGoalDelta(p);
-              if (_survey != null) {
-                final targets = NutritionCalculator.computeTargetsFromSurvey(
-                  _survey!,
-                  goal: _goal,
-                  deltaPercent: _goalDelta,
-                );
-                if (!mounted) return;
-                setState(() {
-                  _targetsFromProfile = true;
-                  _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
-                  _targetProtein = (targets['protein_g'] ?? _targetProtein).toDouble();
-                  _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
-                  _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
-                });
-              }
-            },
-          ),
-        );
+      padding: const EdgeInsets.only(left: 4),
+      child: ChoiceChip(
+        label: Text('$p%'),
+        selected: _goalDelta == p,
+        onSelected: (s) async {
+          if (!s) return;
+          setState(() => _goalDelta = p);
+          await UserService().setNutritionGoalDelta(p);
+          if (_survey != null) {
+            final targets = NutritionCalculator.computeTargetsFromSurvey(
+              _survey!,
+              goal: _goal,
+              deltaPercent: _goalDelta,
+            );
+            if (!mounted) return;
+            setState(() {
+              _targetsFromProfile = true;
+              _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+              _targetProtein = (targets['protein_g'] ?? _targetProtein)
+                  .toDouble();
+              _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+              _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+            });
+          }
+        },
+      ),
+    );
     return Row(children: [chip(10), chip(15), chip(20)]);
   }
 }

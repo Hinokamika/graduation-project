@@ -35,16 +35,25 @@ class IntroPage extends StatelessWidget {
                   return Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.info.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AppColors.info.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.info_outline, color: AppColors.info, size: 18),
+                        Icon(
+                          Icons.info_outline,
+                          color: AppColors.info,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -53,9 +62,10 @@ class IntroPage extends StatelessWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.of(context).pushNamed('/auth_options'),
+                          onPressed: () =>
+                              Navigator.of(context).pushNamed('/auth_options'),
                           child: const Text('Continue'),
-                        )
+                        ),
                       ],
                     ),
                   );
@@ -67,19 +77,28 @@ class IntroPage extends StatelessWidget {
                 builder: (context, snapshot) {
                   final show = snapshot.data == true;
                   if (!show) return const SizedBox.shrink();
-                   return Container(
-                     width: double.infinity,
+                  return Container(
+                    width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.info.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
+                      border: Border.all(
+                        color: AppColors.info.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.assignment_outlined, color: AppColors.info, size: 18),
+                        Icon(
+                          Icons.assignment_outlined,
+                          color: AppColors.info,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -88,9 +107,10 @@ class IntroPage extends StatelessWidget {
                           ),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.of(context).pushNamed('/survey'),
+                          onPressed: () =>
+                              Navigator.of(context).pushNamed('/survey'),
                           child: const Text('Go to Survey'),
-                        )
+                        ),
                       ],
                     ),
                   );
@@ -104,7 +124,10 @@ class IntroPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+                  border: Border.all(
+                    color: Theme.of(context).dividerColor,
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.accent.withValues(alpha: 0.08),
@@ -173,7 +196,9 @@ class IntroPage extends StatelessWidget {
                   Navigator.of(context).pushNamed('/auth_options');
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                   padding: const EdgeInsets.symmetric(
                     vertical: 12,
                     horizontal: 24,
@@ -182,7 +207,9 @@ class IntroPage extends StatelessWidget {
                 child: Text(
                   'Already have an account?',
                   style: AppTextStyles.buttonSmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ),

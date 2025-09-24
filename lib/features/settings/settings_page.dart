@@ -18,7 +18,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final SupabaseClient _supabase = Supabase.instance.client;
   final UserService _userService = UserService();
-  
+
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
   bool _biometricEnabled = false;
@@ -56,37 +56,16 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildSectionTitle('Account Settings'),
             const SizedBox(height: 16),
             _buildAccountSettings(),
-            
+
             const SizedBox(height: 32),
-            
+
             // App Preferences
             _buildSectionTitle('App Preferences'),
             const SizedBox(height: 16),
             _buildAppPreferences(),
-            
+
             const SizedBox(height: 32),
-            
-            // Privacy & Security
-            _buildSectionTitle('Privacy & Security'),
-            const SizedBox(height: 16),
-            _buildPrivacySettings(),
-            
-            const SizedBox(height: 32),
-            
-            // Support
-            _buildSectionTitle('Support'),
-            const SizedBox(height: 16),
-            _buildSupportSettings(),
-            
-            const SizedBox(height: 32),
-            
-            // About
-            _buildSectionTitle('About'),
-            const SizedBox(height: 16),
-            _buildAboutSettings(),
-            
-            const SizedBox(height: 32),
-            
+
             // Danger Zone
             _buildSectionTitle('Danger Zone'),
             const SizedBox(height: 16),
@@ -120,16 +99,14 @@ class _SettingsPageState extends State<SettingsPage> {
             title: 'Profile Information',
             subtitle: 'Update your personal details',
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const UserPage(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (context) => const UserPage()));
             },
           ),
-          
+
           _buildDivider(),
-          
+
           _buildSettingsTile(
             icon: Icons.email_outlined,
             title: 'Email Preferences',
@@ -138,9 +115,9 @@ class _SettingsPageState extends State<SettingsPage> {
               _showComingSoon('Email Preferences');
             },
           ),
-          
+
           _buildDivider(),
-          
+
           _buildSettingsTile(
             icon: Icons.lock_outline,
             title: 'Change Password',
@@ -174,9 +151,9 @@ class _SettingsPageState extends State<SettingsPage> {
               });
             },
           ),
-          
+
           _buildDivider(),
-          
+
           _buildSwitchTile(
             icon: Icons.dark_mode_outlined,
             title: 'Dark Mode',
@@ -186,13 +163,14 @@ class _SettingsPageState extends State<SettingsPage> {
               setState(() {
                 _darkModeEnabled = value;
               });
-              ThemeController.instance
-                  .setMode(value ? ThemeMode.dark : ThemeMode.light);
+              ThemeController.instance.setMode(
+                value ? ThemeMode.dark : ThemeMode.light,
+              );
             },
           ),
-          
+
           _buildDivider(),
-          
+
           _buildSwitchTile(
             icon: Icons.fingerprint_outlined,
             title: 'Biometric Login',
@@ -203,125 +181,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 _biometricEnabled = value;
               });
               _showComingSoon('Biometric Login');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPrivacySettings() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        children: [
-          _buildSettingsTile(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            subtitle: 'Read our privacy policy',
-            onTap: () {
-              _showComingSoon('Privacy Policy');
-            },
-          ),
-          
-          _buildDivider(),
-          
-          _buildSettingsTile(
-            icon: Icons.description_outlined,
-            title: 'Terms of Service',
-            subtitle: 'Read our terms and conditions',
-            onTap: () {
-              _showComingSoon('Terms of Service');
-            },
-          ),
-          
-          _buildDivider(),
-          
-          _buildSettingsTile(
-            icon: Icons.data_usage_outlined,
-            title: 'Data Usage',
-            subtitle: 'Manage app data and storage',
-            onTap: () {
-              _showComingSoon('Data Usage');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSupportSettings() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        children: [
-          _buildSettingsTile(
-            icon: Icons.help_outline,
-            title: 'Help Center',
-            subtitle: 'Get help and support',
-            onTap: () {
-              _showComingSoon('Help Center');
-            },
-          ),
-          
-          _buildDivider(),
-          
-          _buildSettingsTile(
-            icon: Icons.chat_outlined,
-            title: 'Contact Us',
-            subtitle: 'Reach out to our support team',
-            onTap: () {
-              _showComingSoon('Contact Us');
-            },
-          ),
-          
-          _buildDivider(),
-          
-          _buildSettingsTile(
-            icon: Icons.star_outline,
-            title: 'Rate App',
-            subtitle: 'Share your feedback',
-            onTap: () {
-              _showComingSoon('Rate App');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAboutSettings() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        children: [
-          _buildSettingsTile(
-            icon: Icons.info_outline,
-            title: 'App Version',
-            subtitle: '1.0.0',
-            onTap: null,
-          ),
-          
-          _buildDivider(),
-          
-          _buildSettingsTile(
-            icon: Icons.update_outlined,
-            title: 'Check for Updates',
-            subtitle: 'See if a newer version is available',
-            onTap: () {
-              _showComingSoon('Check for Updates');
             },
           ),
         ],
@@ -345,9 +204,9 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _handleResetApp,
             iconColor: AppColors.error,
           ),
-          
+
           _buildDivider(),
-          
+
           _buildSettingsTile(
             icon: Icons.delete_outline,
             title: 'Clear Cache',
@@ -355,9 +214,9 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _handleClearCache,
             iconColor: AppColors.error,
           ),
-          
+
           _buildDivider(),
-          
+
           _buildSettingsTile(
             icon: Icons.logout_outlined,
             title: 'Log Out',
@@ -385,11 +244,7 @@ class _SettingsPageState extends State<SettingsPage> {
           color: (iconColor ?? AppColors.accent).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: iconColor ?? AppColors.accent,
-          size: 20,
-        ),
+        child: Icon(icon, color: iconColor ?? AppColors.accent, size: 20),
       ),
       title: Text(
         title,
@@ -404,11 +259,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       trailing: onTap != null
-          ? Icon(
-              Icons.chevron_right,
-              color: AppColors.textLight,
-              size: 20,
-            )
+          ? Icon(Icons.chevron_right, color: AppColors.textLight, size: 20)
           : null,
       onTap: onTap,
     );
@@ -429,11 +280,7 @@ class _SettingsPageState extends State<SettingsPage> {
           color: AppColors.accent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: AppColors.accent,
-          size: 20,
-        ),
+        child: Icon(icon, color: AppColors.accent, size: 20),
       ),
       title: Text(
         title,
@@ -599,16 +446,15 @@ class _SettingsPageState extends State<SettingsPage> {
       try {
         // Clear local user data
         await _userService.clearLocalData();
-        
+
         // Sign out from Firebase
         await _supabase.auth.signOut();
-        
+
         // Navigate to login page
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/login',
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       } catch (e) {
         if (mounted) {

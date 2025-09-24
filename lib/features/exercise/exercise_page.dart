@@ -50,19 +50,19 @@ class _ExercisePageState extends State<ExercisePage> {
             // Header
             _buildHeader(),
             const SizedBox(height: 32),
-            
+
             // Today's Workout
             _buildTodaysWorkout(),
             const SizedBox(height: 32),
-            
+
             // Weekly Progress
             _buildWeeklyProgress(),
             const SizedBox(height: 32),
-            
+
             // Exercise Categories
             _buildExerciseCategories(),
             const SizedBox(height: 32),
-            
+
             // Recent Workouts
             _buildRecentWorkouts(),
           ],
@@ -108,7 +108,9 @@ class _ExercisePageState extends State<ExercisePage> {
                   Text(
                     'Stay Active, Stay Healthy',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -184,12 +186,7 @@ class _ExercisePageState extends State<ExercisePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            subtitle,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: color,
-            ),
-          ),
+          Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: color)),
         ],
       ),
     );
@@ -215,10 +212,7 @@ class _ExercisePageState extends State<ExercisePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Today's Workout",
-          style: AppTextStyles.subtitle,
-        ),
+        Text("Today's Workout", style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -256,7 +250,10 @@ class _ExercisePageState extends State<ExercisePage> {
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -275,7 +272,9 @@ class _ExercisePageState extends State<ExercisePage> {
               Text(
                 'Complete 3 sets of each exercise with 60s rest between sets.',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 20),
@@ -318,10 +317,7 @@ class _ExercisePageState extends State<ExercisePage> {
                   onPressed: () {
                     // Start workout
                   },
-                  child: Text(
-                    'Start Workout',
-                    style: AppTextStyles.button,
-                  ),
+                  child: Text('Start Workout', style: AppTextStyles.button),
                 ),
               ),
             ],
@@ -342,15 +338,13 @@ class _ExercisePageState extends State<ExercisePage> {
           width: 24,
           height: 24,
           decoration: BoxDecoration(
-            color: completed ? AppColors.success : Theme.of(context).dividerColor,
+            color: completed
+                ? AppColors.success
+                : Theme.of(context).dividerColor,
             shape: BoxShape.circle,
           ),
           child: completed
-              ? Icon(
-                  Icons.check,
-                  color: Colors.white,
-                  size: 16,
-                )
+              ? Icon(Icons.check, color: Colors.white, size: 16)
               : null,
         ),
         const SizedBox(width: 12),
@@ -377,10 +371,7 @@ class _ExercisePageState extends State<ExercisePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Weekly Progress',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Weekly Progress', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -405,12 +396,12 @@ class _ExercisePageState extends State<ExercisePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-          Text(
-            'Workout Days',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
+                  Text(
+                    'Workout Days',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
                   Text(
                     '4/5 completed',
                     style: AppTextStyles.bodySmall.copyWith(
@@ -471,10 +462,7 @@ class _ExercisePageState extends State<ExercisePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Exercise Categories',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Exercise Categories', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -556,11 +544,7 @@ class _ExercisePageState extends State<ExercisePage> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 25,
-            ),
+            child: Icon(icon, color: color, size: 25),
           ),
           const SizedBox(height: 12),
           Text(
@@ -586,10 +570,7 @@ class _ExercisePageState extends State<ExercisePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recent Workouts',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Recent Workouts', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
@@ -655,11 +636,7 @@ class _ExercisePageState extends State<ExercisePage> {
           color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.fitness_center,
-          color: color,
-          size: 20,
-        ),
+        child: Icon(Icons.fitness_center, color: color, size: 20),
       ),
       title: Text(
         title,

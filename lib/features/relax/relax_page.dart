@@ -69,23 +69,23 @@ class _RelaxPageState extends State<RelaxPage> {
             // Header
             _buildHeader(),
             const SizedBox(height: 32),
-            
+
             // Mood Tracker
             _buildMoodTracker(),
             const SizedBox(height: 32),
-            
+
             // Meditation Sessions
             _buildMeditationSessions(),
             const SizedBox(height: 32),
-            
+
             // Breathing Exercises
             _buildBreathingExercises(),
             const SizedBox(height: 32),
-            
+
             // Sleep Quality
             _buildSleepQuality(),
             const SizedBox(height: 32),
-            
+
             // Wellness Tips
             _buildWellnessTips(),
           ],
@@ -221,10 +221,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'How are you feeling today?',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('How are you feeling today?', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -315,24 +312,25 @@ class _RelaxPageState extends State<RelaxPage> {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.2) : AppColors.divider.withValues(alpha: 0.3),
+            color: selected
+                ? color.withValues(alpha: 0.2)
+                : AppColors.divider.withValues(alpha: 0.3),
             shape: BoxShape.circle,
             border: selected
                 ? Border.all(color: color, width: 2)
                 : Border.all(color: Colors.transparent, width: 2),
           ),
           child: Center(
-            child: Text(
-              emoji,
-              style: const TextStyle(fontSize: 24),
-            ),
+            child: Text(emoji, style: const TextStyle(fontSize: 24)),
           ),
         ),
         const SizedBox(height: 8),
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
-            color: selected ? color : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            color: selected
+                ? color
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -344,10 +342,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Meditation Sessions',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Meditation Sessions', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -434,11 +429,7 @@ class _RelaxPageState extends State<RelaxPage> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 12),
           Text(
@@ -466,7 +457,9 @@ class _RelaxPageState extends State<RelaxPage> {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ),
@@ -481,10 +474,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Breathing Exercises',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Breathing Exercises', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -544,10 +534,7 @@ class _RelaxPageState extends State<RelaxPage> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -558,11 +545,7 @@ class _RelaxPageState extends State<RelaxPage> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.air,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(Icons.air, color: color, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -601,10 +584,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Sleep Quality',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Sleep Quality', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(20),
@@ -704,10 +684,7 @@ class _RelaxPageState extends State<RelaxPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Wellness Tips',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Wellness Tips', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
@@ -726,21 +703,24 @@ class _RelaxPageState extends State<RelaxPage> {
               _buildTipItem(
                 icon: Icons.nature,
                 title: 'Connect with Nature',
-                description: 'Spend time outdoors to reduce stress and improve mood.',
+                description:
+                    'Spend time outdoors to reduce stress and improve mood.',
                 color: AppColors.success,
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: Icons.music_note,
                 title: 'Listen to Calming Music',
-                description: 'Soothing sounds can help reduce anxiety and promote relaxation.',
+                description:
+                    'Soothing sounds can help reduce anxiety and promote relaxation.',
                 color: AppColors.healthPrimary,
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: Icons.self_improvement,
                 title: 'Practice Gratitude',
-                description: 'Take time each day to reflect on things you\'re grateful for.',
+                description:
+                    'Take time each day to reflect on things you\'re grateful for.',
                 color: AppColors.wellness,
               ),
             ],
@@ -764,11 +744,7 @@ class _RelaxPageState extends State<RelaxPage> {
           color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 20,
-        ),
+        child: Icon(icon, color: color, size: 20),
       ),
       title: Text(
         title,
@@ -779,9 +755,7 @@ class _RelaxPageState extends State<RelaxPage> {
       ),
       subtitle: Text(
         description,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
       ),
     );
   }

@@ -18,7 +18,7 @@ class _UserPageState extends State<UserPage> {
   final UserService _userService = UserService();
   final SupabaseClient _supabase = Supabase.instance.client;
   final AuthService _authService = AuthService();
-  
+
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
 
@@ -32,7 +32,7 @@ class _UserPageState extends State<UserPage> {
     try {
       final userProfile = await _userService.getUserProfile();
       final user = _supabase.auth.currentUser;
-      
+
       setState(() {
         _userData = {
           ...?userProfile,
@@ -47,7 +47,7 @@ class _UserPageState extends State<UserPage> {
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -78,9 +78,7 @@ class _UserPageState extends State<UserPage> {
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -88,20 +86,20 @@ class _UserPageState extends State<UserPage> {
                 children: [
                   // Profile Header
                   _buildProfileHeader(),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // User Information
                   _buildUserInfoSection(),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Health Data
                   if (_userData?['survey_data'] != null) ...[
                     _buildHealthDataSection(),
                     const SizedBox(height: 32),
                   ],
-                  
+
                   // Account Actions
                   _buildAccountActions(),
                 ],
@@ -112,7 +110,7 @@ class _UserPageState extends State<UserPage> {
 
   Widget _buildProfileHeader() {
     final user = _supabase.auth.currentUser;
-    
+
     String? surveyName;
     final dynamic surveyRaw = _userData?['survey_data'];
     if (surveyRaw is Map) {
@@ -123,7 +121,8 @@ class _UserPageState extends State<UserPage> {
     }
 
     final displayName = _extractDisplayName(user) ?? surveyName ?? 'User';
-    final photoUrl = _extractPhotoUrl(user) ?? (_userData?['photo_url'] as String?);
+    final photoUrl =
+        _extractPhotoUrl(user) ?? (_userData?['photo_url'] as String?);
 
     return Center(
       child: Column(
@@ -160,9 +159,9 @@ class _UserPageState extends State<UserPage> {
                     size: 40,
                   ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // User Name
           Text(
             displayName,
@@ -170,9 +169,9 @@ class _UserPageState extends State<UserPage> {
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // User Email
           Text(
             user?.email ?? '',
@@ -195,27 +194,27 @@ class _UserPageState extends State<UserPage> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Email
         _buildInfoTile(
           icon: Icons.email_outlined,
           title: 'Email',
           value: _supabase.auth.currentUser?.email ?? 'Not available',
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Member Since
         _buildInfoTile(
           icon: Icons.calendar_today_outlined,
           title: 'Member Since',
           value: _formatDate(_supabase.auth.currentUser?.createdAt),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Last Login
         _buildInfoTile(
           icon: Icons.access_time_outlined,
@@ -261,7 +260,7 @@ class _UserPageState extends State<UserPage> {
         conditionsStr = hc.join(', ');
       }
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -271,9 +270,9 @@ class _UserPageState extends State<UserPage> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Age
         if (ageStr != null)
           _buildInfoTile(
@@ -281,9 +280,9 @@ class _UserPageState extends State<UserPage> {
             title: 'Age',
             value: ageStr,
           ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Gender
         if (genderStr != null)
           _buildInfoTile(
@@ -291,9 +290,9 @@ class _UserPageState extends State<UserPage> {
             title: 'Gender',
             value: genderStr,
           ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Height & Weight
         if (heightWeightStr != null)
           _buildInfoTile(
@@ -301,9 +300,9 @@ class _UserPageState extends State<UserPage> {
             title: 'Height & Weight',
             value: heightWeightStr,
           ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Activity Level
         if (activityStr != null)
           _buildInfoTile(
@@ -311,9 +310,9 @@ class _UserPageState extends State<UserPage> {
             title: 'Activity Level',
             value: activityStr,
           ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Health Conditions
         if (conditionsStr != null)
           _buildInfoTile(
@@ -335,9 +334,9 @@ class _UserPageState extends State<UserPage> {
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Edit Profile Button
         SizedBox(
           width: double.infinity,
@@ -361,15 +360,13 @@ class _UserPageState extends State<UserPage> {
             },
             child: Text(
               'Edit Profile',
-              style: AppTextStyles.button.copyWith(
-                color: Colors.white,
-              ),
+              style: AppTextStyles.button.copyWith(color: Colors.white),
             ),
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Logout Button
         SizedBox(
           width: double.infinity,
@@ -385,9 +382,7 @@ class _UserPageState extends State<UserPage> {
             onPressed: _handleLogout,
             child: Text(
               'Log Out',
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.error,
-              ),
+              style: AppTextStyles.button.copyWith(color: AppColors.error),
             ),
           ),
         ),
@@ -416,15 +411,11 @@ class _UserPageState extends State<UserPage> {
               color: AppColors.accent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: AppColors.accent,
-              size: 20,
-            ),
+            child: Icon(icon, color: AppColors.accent, size: 20),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,7 +423,9 @@ class _UserPageState extends State<UserPage> {
                 Text(
                   title,
                   style: AppTextStyles.label.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -486,16 +479,15 @@ class _UserPageState extends State<UserPage> {
       try {
         // Clear local user data
         await _userService.clearLocalData();
-        
+
         // Sign out from Supabase
         await _authService.signOut();
-        
+
         // Navigate to login page
         if (mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/login',
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       } catch (e) {
         if (mounted) {
@@ -515,7 +507,8 @@ class _UserPageState extends State<UserPage> {
     final dynamic raw = user?.userMetadata;
     if (raw is Map) {
       final meta = Map<String, dynamic>.from(raw);
-      final dynamic candidate = meta['full_name'] ?? meta['display_name'] ?? meta['name'];
+      final dynamic candidate =
+          meta['full_name'] ?? meta['display_name'] ?? meta['name'];
       if (candidate is String && candidate.trim().isNotEmpty) {
         return candidate;
       }
@@ -527,7 +520,8 @@ class _UserPageState extends State<UserPage> {
     final dynamic raw = user?.userMetadata;
     if (raw is Map) {
       final meta = Map<String, dynamic>.from(raw);
-      final dynamic candidate = meta['avatar_url'] ?? meta['picture'] ?? meta['photo_url'];
+      final dynamic candidate =
+          meta['avatar_url'] ?? meta['picture'] ?? meta['photo_url'];
       if (candidate is String && candidate.trim().isNotEmpty) {
         return candidate;
       }

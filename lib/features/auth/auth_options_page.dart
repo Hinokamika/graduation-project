@@ -46,12 +46,18 @@ class AuthOptionsPage extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.info.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AppColors.info.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.check_circle_outline, color: AppColors.info, size: 18),
+                        Icon(
+                          Icons.check_circle_outline,
+                          color: AppColors.info,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(

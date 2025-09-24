@@ -6,7 +6,7 @@ class NutritionCalculator {
     if (l.contains('moderate')) return 1.55; // 3-5 days/week
     if (l.contains('very') || l.contains('hard')) return 1.725; // 6-7 days/week
     return 1.2; // default sedentary
-    }
+  }
 
   // Mifflin-St Jeor BMR (metric inputs)
   static double? computeBmr({
@@ -29,13 +29,22 @@ class NutritionCalculator {
     String goal = 'maintain', // 'lose' | 'maintain' | 'gain'
     int deltaPercent = 15, // 10, 15, 20
   }) {
-    final weight = (survey['weight'] is num) ? (survey['weight'] as num).toDouble() : null;
-    final height = (survey['height'] is num) ? (survey['height'] as num).toDouble() : null;
+    final weight = (survey['weight'] is num)
+        ? (survey['weight'] as num).toDouble()
+        : null;
+    final height = (survey['height'] is num)
+        ? (survey['height'] as num).toDouble()
+        : null;
     final age = (survey['age'] is num) ? (survey['age'] as num).toInt() : null;
     final gender = survey['gender']?.toString();
     final activity = survey['activity_level']?.toString();
 
-    final bmr = computeBmr(weightKg: weight, heightCm: height, ageYears: age, gender: gender);
+    final bmr = computeBmr(
+      weightKg: weight,
+      heightCm: height,
+      ageYears: age,
+      gender: gender,
+    );
     final multiplier = _activityMultiplier(activity);
     var tdee = (bmr ?? 2000) * multiplier;
 

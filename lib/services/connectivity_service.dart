@@ -9,11 +9,13 @@ class ConnectivityService {
   final Connectivity _connectivity = Connectivity();
 
   // Raw stream from connectivity_plus v6+: emits a list of connectivity states
-  Stream<List<ConnectivityResult>> get onStatusChangesRaw => _connectivity.onConnectivityChanged;
+  Stream<List<ConnectivityResult>> get onStatusChangesRaw =>
+      _connectivity.onConnectivityChanged;
 
   // Convenience: stream of online/offline booleans
-  Stream<bool> get onlineChanges =>
-      _connectivity.onConnectivityChanged.map((list) => list.any((r) => r != ConnectivityResult.none));
+  Stream<bool> get onlineChanges => _connectivity.onConnectivityChanged.map(
+    (list) => list.any((r) => r != ConnectivityResult.none),
+  );
 
   Future<bool> isOnline() async {
     final results = await _connectivity.checkConnectivity();

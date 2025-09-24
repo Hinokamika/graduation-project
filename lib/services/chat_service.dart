@@ -11,9 +11,13 @@ class ChatService extends ChangeNotifier {
         .from('message')
         .stream(primaryKey: ['id'])
         .order('timestamp', ascending: true)
-        .map((maps) => maps
-            .map((map) => Message.fromJson(map as Map<String, dynamic>, userId))
-            .toList());
+        .map(
+          (maps) => maps
+              .map(
+                (map) => Message.fromJson(map as Map<String, dynamic>, userId),
+              )
+              .toList(),
+        );
   }
 
   Future<void> sendMessage(String content) async {
@@ -29,5 +33,4 @@ class ChatService extends ChangeNotifier {
     };
     await _supabaseClient.from('message').insert(payload);
   }
-
 }

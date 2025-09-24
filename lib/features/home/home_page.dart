@@ -1,3 +1,4 @@
+import 'package:final_project/config/theme_controller.dart';
 import 'package:final_project/features/chat/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -9,6 +10,7 @@ import 'package:final_project/features/nutrition/meal_page.dart';
 import 'package:final_project/features/relax/relax_page.dart';
 import 'package:final_project/features/profile/user_page.dart';
 import 'package:final_project/features/settings/settings_page.dart';
+import 'package:final_project/features/demo/ui_components_demo.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,7 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
-  
+
   final List<Widget> _pages = [
     const OverviewPage(),
     const ExercisePage(),
@@ -39,15 +41,13 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Top Navbar
             _buildTopNavbar(),
-            
+
             // Main Content
-            Expanded(
-              child: _pages[_currentIndex],
-            ),
+            Expanded(child: _pages[_currentIndex]),
           ],
         ),
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBar: _buildBottomNavbar(),
     );
@@ -91,12 +91,14 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'Your Health Companion',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
           ),
-          
+
           // Settings and User Profile
           Row(
             children: [
@@ -116,9 +118,22 @@ class _HomePageState extends State<HomePage> {
                 },
                 tooltip: 'Settings',
               ),
-              
+              // Theme Toggle Button
+              IconButton(
+                icon: Icon(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? CupertinoIcons.sun_max
+                      : CupertinoIcons.moon,
+                  color: AppColors.getTextPrimary(context),
+                ),
+                onPressed: () {
+                  ThemeController.instance.toggle();
+                },
+                tooltip: 'Toggle Theme',
+              ),
+
               const SizedBox(width: 8),
-              
+
               // Notifications
               Stack(
                 children: [
@@ -153,16 +168,14 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(width: 8),
-              
+
               // User Profile Button
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const UserPage(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const UserPage()),
                   );
                 },
                 child: Container(
@@ -171,7 +184,7 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(
                     color: AppColors.healthSecondary,
                     shape: BoxShape.circle,
-                  border: Border.all(
+                    border: Border.all(
                       color: Theme.of(context).dividerColor,
                       width: 1,
                     ),
@@ -200,7 +213,8 @@ class _HomePageState extends State<HomePage> {
     // Make it floating with a smaller bottom margin
     final bottom = 4.0;
     final iconSize = isCompact ? 20.0 : 24.0;
-    final showLabels = width >= 360; // hide labels on compact to prevent overflow
+    final showLabels =
+        width >= 360; // hide labels on compact to prevent overflow
 
     // Shorten labels on medium widths to avoid overflow
     final overviewLabel = isMedium ? 'Home' : 'Overview';
@@ -230,46 +244,56 @@ class _HomePageState extends State<HomePage> {
         ),
         child: Row(
           children: [
-            Expanded(child: _buildNavItem(
-              icon: CupertinoIcons.square_grid_2x2,
-              selectedIcon: CupertinoIcons.square_grid_2x2_fill,
-              label: overviewLabel,
-              index: 0,
-              showLabel: showLabels,
-              iconSize: iconSize,
-            )),
-            Expanded(child: _buildNavItem(
-              icon: CupertinoIcons.sportscourt,
-              selectedIcon: CupertinoIcons.sportscourt_fill,
-              label: workoutLabel,
-              index: 1,
-              showLabel: showLabels,
-              iconSize: iconSize,
-            )),
-            Expanded(child: _buildNavItem(
-              icon: CupertinoIcons.chat_bubble,
-              selectedIcon: CupertinoIcons.chat_bubble_fill,
-              label: 'Chat',
-              index: 2,
-              showLabel: showLabels,
-              iconSize: iconSize,
-            )),
-            Expanded(child: _buildNavItem(
-              icon: CupertinoIcons.heart,
-              selectedIcon: CupertinoIcons.heart_fill,
-              label: 'Meal',
-              index: 3,
-              showLabel: showLabels,
-              iconSize: iconSize,
-            )),
-            Expanded(child: _buildNavItem(
-              icon: CupertinoIcons.leaf_arrow_circlepath,
-              selectedIcon: CupertinoIcons.leaf_arrow_circlepath,
-              label: 'Relax',
-              index: 4,
-              showLabel: showLabels,
-              iconSize: iconSize,
-            )),
+            Expanded(
+              child: _buildNavItem(
+                icon: CupertinoIcons.square_grid_2x2,
+                selectedIcon: CupertinoIcons.square_grid_2x2_fill,
+                label: overviewLabel,
+                index: 0,
+                showLabel: showLabels,
+                iconSize: iconSize,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: CupertinoIcons.sportscourt,
+                selectedIcon: CupertinoIcons.sportscourt_fill,
+                label: workoutLabel,
+                index: 1,
+                showLabel: showLabels,
+                iconSize: iconSize,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: CupertinoIcons.chat_bubble,
+                selectedIcon: CupertinoIcons.chat_bubble_fill,
+                label: 'Chat',
+                index: 2,
+                showLabel: showLabels,
+                iconSize: iconSize,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: CupertinoIcons.heart,
+                selectedIcon: CupertinoIcons.heart_fill,
+                label: 'Meal',
+                index: 3,
+                showLabel: showLabels,
+                iconSize: iconSize,
+              ),
+            ),
+            Expanded(
+              child: _buildNavItem(
+                icon: CupertinoIcons.leaf_arrow_circlepath,
+                selectedIcon: CupertinoIcons.leaf_arrow_circlepath,
+                label: 'Relax',
+                index: 4,
+                showLabel: showLabels,
+                iconSize: iconSize,
+              ),
+            ),
           ],
         ),
       ),
@@ -285,7 +309,7 @@ class _HomePageState extends State<HomePage> {
     required double iconSize,
   }) {
     final isSelected = _currentIndex == index;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -299,10 +323,7 @@ class _HomePageState extends State<HomePage> {
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeInOut,
           margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          padding: EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 6,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.accent.withValues(alpha: 0.1)
@@ -326,7 +347,9 @@ class _HomePageState extends State<HomePage> {
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isSelected ? AppColors.accent : AppColors.textLight,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],

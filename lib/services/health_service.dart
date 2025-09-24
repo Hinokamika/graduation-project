@@ -19,10 +19,14 @@ class HealthService {
     HealthDataType.HEART_RATE,
     HealthDataType.ACTIVE_ENERGY_BURNED,
     HealthDataType.DIETARY_ENERGY_CONSUMED,
+    HealthDataType.SLEEP_SESSION,
   ];
 
   Future<bool> hasPermissions() async {
-    final granted = await _health.hasPermissions(_readTypes, permissions: _readTypes.map((_) => HealthDataAccess.READ).toList());
+    final granted = await _health.hasPermissions(
+      _readTypes,
+      permissions: _readTypes.map((_) => HealthDataAccess.READ).toList(),
+    );
     return granted ?? false;
   }
 
@@ -40,7 +44,10 @@ class HealthService {
     final DateTime end = DateTime.now();
     final DateTime start = DateTime(end.year - 2); // look back 2 years
 
-    final types = <HealthDataType>[HealthDataType.HEIGHT, HealthDataType.WEIGHT];
+    final types = <HealthDataType>[
+      HealthDataType.HEIGHT,
+      HealthDataType.WEIGHT,
+    ];
     final points = await _health.getHealthDataFromTypes(
       types: types,
       startTime: start,
@@ -54,7 +61,9 @@ class HealthService {
 
     for (final p in points) {
       if (p.type == HealthDataType.HEIGHT) {
-        final v = (p.value is num) ? (p.value as num).toDouble() : double.tryParse('${p.value}');
+        final v = (p.value is num)
+            ? (p.value as num).toDouble()
+            : double.tryParse('${p.value}');
         if (v != null) {
           final prev = latestHeightAt;
           if (prev == null || p.dateTo.isAfter(prev)) {
@@ -63,7 +72,9 @@ class HealthService {
           }
         }
       } else if (p.type == HealthDataType.WEIGHT) {
-        final v = (p.value is num) ? (p.value as num).toDouble() : double.tryParse('${p.value}');
+        final v = (p.value is num)
+            ? (p.value as num).toDouble()
+            : double.tryParse('${p.value}');
         if (v != null) {
           final prev = latestWeightAt;
           if (prev == null || p.dateTo.isAfter(prev)) {
@@ -74,10 +85,7 @@ class HealthService {
       }
     }
 
-    return {
-      'height': latestHeight,
-      'weight': latestWeight,
-    };
+    return {'height': latestHeight, 'weight': latestWeight};
   }
 
   // Example: fetch total steps for today
@@ -104,7 +112,9 @@ class HealthService {
       );
       double total = 0;
       for (final p in points) {
-        final v = (p.value is num) ? (p.value as num).toDouble() : double.tryParse('${p.value}') ?? 0.0;
+        final v = (p.value is num)
+            ? (p.value as num).toDouble()
+            : double.tryParse('${p.value}') ?? 0.0;
         total += v;
       }
       return total;
@@ -120,7 +130,9 @@ class HealthService {
     for (int i = days - 1; i >= 0; i--) {
       final day = now.subtract(Duration(days: i));
       final start = DateTime(day.year, day.month, day.day);
-      final end = start.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
+      final end = start
+          .add(const Duration(days: 1))
+          .subtract(const Duration(milliseconds: 1));
       try {
         final steps = await _health.getTotalStepsInInterval(start, end);
         daily.add(steps ?? 0);
@@ -145,7 +157,9 @@ class HealthService {
       double sum = 0;
       int count = 0;
       for (final p in points) {
-        final v = (p.value is num) ? (p.value as num).toDouble() : double.tryParse('${p.value}');
+        final v = (p.value is num)
+            ? (p.value as num).toDouble()
+            : double.tryParse('${p.value}');
         if (v != null) {
           sum += v;
           count += 1;
@@ -171,14 +185,14 @@ class HealthService {
     };
     try {
       final points = await _health.getHealthDataFromTypes(
-        types: [
-          HealthDataType.DIETARY_ENERGY_CONSUMED,
-        ],
+        types: [HealthDataType.DIETARY_ENERGY_CONSUMED],
         startTime: startOfDay,
         endTime: end,
       );
       for (final p in points) {
-        final v = (p.value is num) ? (p.value as num).toDouble() : double.tryParse('${p.value}') ?? 0.0;
+        final v = (p.value is num)
+            ? (p.value as num).toDouble()
+            : double.tryParse('${p.value}') ?? 0.0;
         if (p.type == HealthDataType.DIETARY_ENERGY_CONSUMED) {
           out['energy_kcal'] = (out['energy_kcal'] ?? 0) + v;
         }

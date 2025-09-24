@@ -9,7 +9,8 @@ class AuthService {
 
   User? get currentUser => _supabase.auth.currentUser;
 
-  Stream<Session?> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) => event.session);
+  Stream<Session?> get authStateChanges =>
+      _supabase.auth.onAuthStateChange.map((event) => event.session);
 
   Future<void> signInWithEmailAndPassword({
     required String email,
@@ -47,7 +48,9 @@ class AuthService {
   }
 
   Future<void> updateUsername({required String username}) async {
-    await _supabase.auth.updateUser(UserAttributes(data: {'full_name': username}));
+    await _supabase.auth.updateUser(
+      UserAttributes(data: {'full_name': username}),
+    );
   }
 
   Future<void> updateEmail({required String email}) async {

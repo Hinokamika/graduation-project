@@ -112,7 +112,9 @@ class _ChatPageState extends State<ChatPage> {
                       ? []
                       : [
                           BoxShadow(
-                            color: Theme.of(context).dividerColor.withOpacity(0.7),
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withOpacity(0.7),
                             blurRadius: 10,
                             offset: const Offset(0, -2),
                           ),
@@ -167,7 +169,9 @@ class _ChatPageState extends State<ChatPage> {
                                     width: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Colors.white,
+                                      ),
                                     ),
                                   )
                                 : const Icon(Icons.send, size: 20),
@@ -191,7 +195,9 @@ class _ChatPageState extends State<ChatPage> {
       label: Text(
         label,
         style: AppTextStyles.bodySmall.copyWith(
-          color: selected ? Colors.white : Theme.of(context).colorScheme.onSurface,
+          color: selected
+              ? Colors.white
+              : Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),

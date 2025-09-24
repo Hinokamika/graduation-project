@@ -17,24 +17,19 @@ class Message {
     required this.isMine,
   });
 
-  Message.create({
-    required this.content,
-    required this.userFrom,
-  }) : id = '',
-        isMine = true,
-       timestamp = DateTime.now();
+  Message.create({required this.content, required this.userFrom})
+    : id = '',
+      isMine = true,
+      timestamp = DateTime.now();
 
   Message.fromJson(Map<String, dynamic> json, String currentUserId)
-      : id = json['id'] as String,
-        content = json['content'] as String,
-        timestamp = DateTime.parse(json['timestamp'] as String),
-        userFrom = json['userFrom'] as String,
-        isMine = (json['userFrom'] as String) == currentUserId;
+    : id = json['id'] as String,
+      content = json['content'] as String,
+      timestamp = DateTime.parse(json['timestamp'] as String),
+      userFrom = json['userFrom'] as String,
+      isMine = (json['userFrom'] as String) == currentUserId;
 
   Map toMap() {
-    return {
-      'content': content,
-      'userFrom': userFrom,
-    };
+    return {'content': content, 'userFrom': userFrom};
   }
 }

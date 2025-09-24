@@ -125,11 +125,15 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -144,7 +148,8 @@ class _LoginPageState extends State<LoginPage> {
                   final v = (value ?? '').trim();
                   if (v.isEmpty) return 'Please enter your email';
                   final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                  if (!emailRegex.hasMatch(v)) return 'Please enter a valid email';
+                  if (!emailRegex.hasMatch(v))
+                    return 'Please enter a valid email';
                   return null;
                 },
               ),
@@ -168,11 +173,15 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -236,7 +245,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: _isLoading ? null : () => _forgotPassword(),
                   style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    foregroundColor: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                     padding: const EdgeInsets.symmetric(
                       vertical: 12,
                       horizontal: 24,
@@ -245,7 +256,9 @@ class _LoginPageState extends State<LoginPage> {
                   child: Text(
                     'Forgot Password?',
                     style: AppTextStyles.buttonSmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ),

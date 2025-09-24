@@ -13,7 +13,6 @@ class SignUpPage extends StatefulWidget {
   State<SignUpPage> createState() => _SignUpPageState();
 }
 
-
 class _SignUpPageState extends State<SignUpPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -145,7 +144,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 enableSuggestions: false,
                 textCapitalization: TextCapitalization.none,
                 inputFormatters: [
-                  FilteringTextInputFormatter.deny(RegExp(r"\s")), // prevent spaces/newlines
+                  FilteringTextInputFormatter.deny(
+                    RegExp(r"\s"),
+                  ), // prevent spaces/newlines
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
@@ -155,7 +156,8 @@ class _SignUpPageState extends State<SignUpPage> {
                   final v = (value ?? '').trim();
                   if (v.isEmpty) return 'Please enter your email';
                   final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                  if (!emailRegex.hasMatch(v)) return 'Please enter a valid email';
+                  if (!emailRegex.hasMatch(v))
+                    return 'Please enter a valid email';
                   return null;
                 },
               ),

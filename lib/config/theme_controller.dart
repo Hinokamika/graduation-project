@@ -7,6 +7,7 @@ class ThemeController {
   final ValueNotifier<ThemeMode> mode = ValueNotifier(ThemeMode.light);
 
   void setMode(ThemeMode newMode) => mode.value = newMode;
-  void toggle() => mode.value = mode.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  void toggle() => mode.value = mode.value == ThemeMode.dark
+      ? ThemeMode.light
+      : ThemeMode.dark;
 }
-

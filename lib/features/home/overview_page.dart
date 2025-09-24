@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/components/enhanced_card.dart';
 
 class OverviewPage extends StatelessWidget {
   const OverviewPage({super.key});
@@ -15,22 +16,22 @@ class OverviewPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // Welcome Section
-          _buildWelcomeSection(context),
+            // Welcome Section
+            _buildWelcomeSection(context),
             const SizedBox(height: 32),
-            
-          // Today's Summary
-          _buildTodaySummary(context),
+
+            // Today's Summary
+            _buildTodaySummary(context),
             const SizedBox(height: 32),
-            
+
             // Health Metrics
             _buildHealthMetrics(context),
             const SizedBox(height: 32),
-            
+
             // Recent Activities
             _buildRecentActivities(context),
             const SizedBox(height: 32),
-            
+
             // Quick Actions
             _buildQuickActions(context),
           ],
@@ -40,69 +41,67 @@ class OverviewPage extends StatelessWidget {
   }
 
   Widget _buildWelcomeSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Theme.of(context).brightness == Brightness.dark
-            ? Border.all(color: Theme.of(context).dividerColor)
-            : null,
-        boxShadow: Theme.of(context).brightness == Brightness.dark
-            ? []
-            : [
-                BoxShadow(
-                  color: AppColors.divider.withValues(alpha: 0.5),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-      ),
+    return EnhancedCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Good Morning,',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: AppColors.getTextSecondary(context),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Sarah Johnson',
-            style: AppTextStyles.heading2.copyWith(
+            style: AppTextStyles.displayMedium.copyWith(
               color: AppColors.primary,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      CupertinoIcons.chart_bar,
-                      color: AppColors.success,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Great Progress!',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.success.withOpacity(0.1),
+                  AppColors.success.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(
+                color: AppColors.success.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.success,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.chart_bar_fill,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Great Progress!',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -113,10 +112,7 @@ class OverviewPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Today's Summary",
-          style: AppTextStyles.subtitle,
-        ),
+        Text("Today's Summary", style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -209,16 +205,14 @@ class OverviewPage extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -254,32 +248,30 @@ class OverviewPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Health Metrics',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Health Metrics', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Theme.of(context).brightness == Brightness.dark
-                  ? Border.all(color: Theme.of(context).dividerColor)
-                  : null,
-              boxShadow: Theme.of(context).brightness == Brightness.dark
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: AppColors.divider.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-            ),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+          ),
           child: Column(
             children: [
               _buildMetricRow(
+                context,
                 label: 'Heart Rate',
                 value: '72 bpm',
                 status: 'Normal',
@@ -288,6 +280,7 @@ class OverviewPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildMetricRow(
+                context,
                 label: 'Blood Pressure',
                 value: '120/80',
                 status: 'Optimal',
@@ -296,6 +289,7 @@ class OverviewPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildMetricRow(
+                context,
                 label: 'BMI',
                 value: '22.4',
                 status: 'Healthy',
@@ -304,6 +298,7 @@ class OverviewPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildMetricRow(
+                context,
                 label: 'Stress Level',
                 value: 'Low',
                 status: 'Good',
@@ -317,7 +312,8 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricRow({
+  Widget _buildMetricRow(
+    BuildContext context, {
     required String label,
     required String value,
     required String status,
@@ -326,24 +322,20 @@ class OverviewPage extends StatelessWidget {
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          color: AppColors.textSecondary,
-          size: 20,
-        ),
+        Icon(icon, color: AppColors.textSecondary, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             label,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
         Text(
           value,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.primary,
+            color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -370,10 +362,7 @@ class OverviewPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Recent Activities',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Recent Activities', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
@@ -427,7 +416,8 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityItem(BuildContext context, {
+  Widget _buildActivityItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String time,
@@ -442,11 +432,7 @@ class OverviewPage extends StatelessWidget {
           color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 20,
-        ),
+        child: Icon(icon, color: color, size: 20),
       ),
       title: Text(
         title,
@@ -474,10 +460,7 @@ class OverviewPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Quick Actions',
-          style: AppTextStyles.subtitle,
-        ),
+        Text('Quick Actions', style: AppTextStyles.subtitle),
         const SizedBox(height: 16),
         Row(
           children: [
@@ -526,7 +509,8 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, {
+  Widget _buildActionButton(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required Color color,
@@ -551,11 +535,7 @@ class OverviewPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
+          Icon(icon, color: color, size: 24),
           const SizedBox(height: 8),
           Text(
             label,
