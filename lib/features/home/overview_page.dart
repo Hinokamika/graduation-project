@@ -9,49 +9,54 @@ class OverviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome Section
-            _buildWelcomeSection(),
+          // Welcome Section
+          _buildWelcomeSection(context),
             const SizedBox(height: 32),
             
-            // Today's Summary
-            _buildTodaySummary(),
+          // Today's Summary
+          _buildTodaySummary(context),
             const SizedBox(height: 32),
             
             // Health Metrics
-            _buildHealthMetrics(),
+            _buildHealthMetrics(context),
             const SizedBox(height: 32),
             
             // Recent Activities
-            _buildRecentActivities(),
+            _buildRecentActivities(context),
             const SizedBox(height: 32),
             
             // Quick Actions
-            _buildQuickActions(),
+            _buildQuickActions(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeSection() {
+  Widget _buildWelcomeSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +64,7 @@ class OverviewPage extends StatelessWidget {
           Text(
             'Good Morning,',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 4),
@@ -104,7 +109,7 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTodaySummary() {
+  Widget _buildTodaySummary(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -117,6 +122,7 @@ class OverviewPage extends StatelessWidget {
           children: [
             Expanded(
               child: _buildSummaryCard(
+                context,
                 title: 'Steps',
                 value: '8,432',
                 target: '10,000',
@@ -128,6 +134,7 @@ class OverviewPage extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildSummaryCard(
+                context,
                 title: 'Calories',
                 value: '1,850',
                 target: '2,200',
@@ -143,6 +150,7 @@ class OverviewPage extends StatelessWidget {
           children: [
             Expanded(
               child: _buildSummaryCard(
+                context,
                 title: 'Water',
                 value: '1.8L',
                 target: '2.5L',
@@ -154,6 +162,7 @@ class OverviewPage extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildSummaryCard(
+                context,
                 title: 'Sleep',
                 value: '7.5h',
                 target: '8h',
@@ -168,7 +177,8 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard({
+  Widget _buildSummaryCard(
+    BuildContext context, {
     required String title,
     required String value,
     required String target,
@@ -179,15 +189,20 @@ class OverviewPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +218,7 @@ class OverviewPage extends StatelessWidget {
               Text(
                 title,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -220,13 +235,13 @@ class OverviewPage extends StatelessWidget {
           Text(
             'Target: $target',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textLight,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: AppColors.divider,
+            backgroundColor: Theme.of(context).dividerColor,
             valueColor: AlwaysStoppedAnimation<Color>(color),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -235,7 +250,7 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHealthMetrics() {
+  Widget _buildHealthMetrics(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -244,19 +259,24 @@ class OverviewPage extends StatelessWidget {
           style: AppTextStyles.subtitle,
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Theme.of(context).brightness == Brightness.dark
+                  ? Border.all(color: Theme.of(context).dividerColor)
+                  : null,
+              boxShadow: Theme.of(context).brightness == Brightness.dark
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: AppColors.divider.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+            ),
           child: Column(
             children: [
               _buildMetricRow(
@@ -346,7 +366,7 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivities() {
+  Widget _buildRecentActivities(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -357,35 +377,43 @@ class OverviewPage extends StatelessWidget {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
               _buildActivityItem(
+                context,
                 icon: CupertinoIcons.sportscourt,
                 title: 'Morning Yoga',
                 time: '30 min ago',
                 calories: '120 cal',
                 color: AppColors.accent,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildActivityItem(
+                context,
                 icon: Icons.restaurant,
                 title: 'Healthy Breakfast',
                 time: '2 hours ago',
                 calories: '350 cal',
                 color: AppColors.success,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildActivityItem(
+                context,
                 icon: Icons.directions_walk,
                 title: 'Evening Walk',
                 time: 'Yesterday',
@@ -399,7 +427,7 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityItem({
+  Widget _buildActivityItem(BuildContext context, {
     required IconData icon,
     required String title,
     required String time,
@@ -423,26 +451,26 @@ class OverviewPage extends StatelessWidget {
       title: Text(
         title,
         style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         time,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
         ),
       ),
       trailing: Text(
         calories,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -455,6 +483,7 @@ class OverviewPage extends StatelessWidget {
           children: [
             Expanded(
               child: _buildActionButton(
+                context,
                 icon: Icons.add,
                 label: 'Log Activity',
                 color: AppColors.accent,
@@ -463,6 +492,7 @@ class OverviewPage extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildActionButton(
+                context,
                 icon: Icons.camera_alt,
                 label: 'Scan Food',
                 color: AppColors.success,
@@ -475,6 +505,7 @@ class OverviewPage extends StatelessWidget {
           children: [
             Expanded(
               child: _buildActionButton(
+                context,
                 icon: Icons.medication,
                 label: 'Medications',
                 color: AppColors.warning,
@@ -483,6 +514,7 @@ class OverviewPage extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildActionButton(
+                context,
                 icon: Icons.calendar_today,
                 label: 'Appointments',
                 color: AppColors.info,
@@ -494,7 +526,7 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildActionButton(BuildContext context, {
     required IconData icon,
     required String label,
     required Color color,
@@ -502,15 +534,20 @@ class OverviewPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         children: [
@@ -523,7 +560,7 @@ class OverviewPage extends StatelessWidget {
           Text(
             label,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,

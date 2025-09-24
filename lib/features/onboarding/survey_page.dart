@@ -1,3 +1,5 @@
+import 'package:final_project/components/buildDropdown.dart';
+import 'package:final_project/components/buildTextField.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -45,7 +47,7 @@ class _SurveyPageState extends State<SurveyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -53,7 +55,7 @@ class _SurveyPageState extends State<SurveyPage> {
         leading: IconButton(
           icon: Icon(
             CupertinoIcons.back,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -85,7 +87,7 @@ class _SurveyPageState extends State<SurveyPage> {
               _buildSectionTitle('Personal Information'),
               const SizedBox(height: 16),
 
-              _buildTextField(
+              buildTextField(
                 controller: _nameController,
                 label: 'Full Name',
                 icon: Icons.person_outline,
@@ -99,7 +101,7 @@ class _SurveyPageState extends State<SurveyPage> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField(
+                    child: buildTextField(
                       controller: _ageController,
                       label: 'Age',
                       icon: Icons.cake_outlined,
@@ -116,7 +118,7 @@ class _SurveyPageState extends State<SurveyPage> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildDropdown(
+                    child: buildDropdown(
                       value: _selectedGender,
                       label: 'Gender',
                       icon: Icons.wc_outlined,
@@ -137,7 +139,7 @@ class _SurveyPageState extends State<SurveyPage> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField(
+                    child: buildTextField(
                       controller: _heightController,
                       label: 'Height (cm)',
                       icon: Icons.height,
@@ -154,7 +156,7 @@ class _SurveyPageState extends State<SurveyPage> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: _buildTextField(
+                    child: buildTextField(
                       controller: _weightController,
                       label: 'Weight (kg)',
                       icon: Icons.monitor_weight_outlined,
@@ -173,7 +175,7 @@ class _SurveyPageState extends State<SurveyPage> {
               ),
               const SizedBox(height: 16),
 
-              _buildDropdown(
+              buildDropdown(
                 value: _selectedActivityLevel,
                 label: 'Activity Level',
                 icon: Icons.directions_run,
@@ -253,84 +255,6 @@ class _SurveyPageState extends State<SurveyPage> {
 
   Widget _buildSectionTitle(String title) {
     return Text(title, style: AppTextStyles.subtitle);
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: const TextStyle(fontSize: 16),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: primaryBlue),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.black12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryBlue, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        labelStyle: TextStyle(color: Colors.black54),
-      ),
-    );
-  }
-
-  Widget _buildDropdown({
-    required String? value,
-    required String label,
-    required IconData icon,
-    required List<String> items,
-    required void Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      isExpanded: true, // This prevents overflow
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: primaryBlue),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.black12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryBlue, width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        labelStyle: TextStyle(color: Colors.black54),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 16,
-        ),
-      ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem(
-              value: item,
-              child: Text(
-                item,
-                style: const TextStyle(fontSize: 14),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-      validator: (value) => value == null ? 'Please select $label' : null,
-      menuMaxHeight: 300, // Limit dropdown height
-    );
   }
 
   void _submitSurvey() async {

@@ -12,7 +12,7 @@ class AuthOptionsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -20,7 +20,7 @@ class AuthOptionsPage extends StatelessWidget {
         leading: IconButton(
           icon: Icon(
             CupertinoIcons.back,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -116,7 +116,7 @@ class AuthOptionsPage extends StatelessWidget {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.accent,
-                    backgroundColor: AppColors.white,
+                    backgroundColor: Theme.of(context).cardColor,
                     side: BorderSide(color: AppColors.accent, width: 1.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

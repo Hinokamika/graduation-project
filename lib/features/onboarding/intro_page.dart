@@ -12,7 +12,7 @@ class IntroPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -102,9 +102,9 @@ class IntroPage extends StatelessWidget {
                 width: 108,
                 height: 108,
                 decoration: BoxDecoration(
-                  color: AppColors.white,
+                  color: Theme.of(context).cardColor,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.divider, width: 1),
+                  border: Border.all(color: Theme.of(context).dividerColor, width: 1),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.accent.withValues(alpha: 0.08),
@@ -173,7 +173,7 @@ class IntroPage extends StatelessWidget {
                   Navigator.of(context).pushNamed('/auth_options');
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   padding: const EdgeInsets.symmetric(
                     vertical: 12,
                     horizontal: 24,
@@ -182,7 +182,7 @@ class IntroPage extends StatelessWidget {
                 child: Text(
                   'Already have an account?',
                   style: AppTextStyles.buttonSmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ),

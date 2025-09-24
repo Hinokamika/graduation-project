@@ -76,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Welcome Back', style: AppTextStyles.heading3),
         backgroundColor: Colors.transparent,
@@ -85,7 +85,7 @@ class _LoginPageState extends State<LoginPage> {
         leading: IconButton(
           icon: Icon(
             CupertinoIcons.back,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -118,19 +118,18 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   hintText: 'Enter your email address',
                   hintStyle: AppTextStyles.hint,
-                  filled: true,
-                  fillColor: AppColors.surface,
+                  // Use themed fill from InputDecorationTheme
                   prefixIcon: Icon(
                     Icons.email_outlined,
                     color: AppColors.textLight,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.divider),
+                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.divider),
+                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -162,19 +161,18 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   hintText: 'Enter your password',
                   hintStyle: AppTextStyles.hint,
-                  filled: true,
-                  fillColor: AppColors.surface,
+                  // Use themed fill from InputDecorationTheme
                   prefixIcon: Icon(
                     Icons.lock_outlined,
                     color: AppColors.textLight,
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.divider),
+                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppColors.divider),
+                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -238,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: _isLoading ? null : () => _forgotPassword(),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
+                    foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     padding: const EdgeInsets.symmetric(
                       vertical: 12,
                       horizontal: 24,
@@ -247,7 +245,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Text(
                     'Forgot Password?',
                     style: AppTextStyles.buttonSmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ),

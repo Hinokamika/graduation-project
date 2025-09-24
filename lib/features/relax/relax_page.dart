@@ -60,7 +60,7 @@ class _RelaxPageState extends State<RelaxPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -98,15 +98,20 @@ class _RelaxPageState extends State<RelaxPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,15 +229,20 @@ class _RelaxPageState extends State<RelaxPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -322,7 +332,7 @@ class _RelaxPageState extends State<RelaxPage> {
         Text(
           label,
           style: AppTextStyles.bodySmall.copyWith(
-            color: selected ? color : AppColors.textSecondary,
+            color: selected ? color : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -400,15 +410,20 @@ class _RelaxPageState extends State<RelaxPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         children: [
@@ -451,7 +466,7 @@ class _RelaxPageState extends State<RelaxPage> {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
                   style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ),
@@ -474,15 +489,20 @@ class _RelaxPageState extends State<RelaxPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -589,15 +609,20 @@ class _RelaxPageState extends State<RelaxPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -704,14 +729,14 @@ class _RelaxPageState extends State<RelaxPage> {
                 description: 'Spend time outdoors to reduce stress and improve mood.',
                 color: AppColors.success,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: Icons.music_note,
                 title: 'Listen to Calming Music',
                 description: 'Soothing sounds can help reduce anxiety and promote relaxation.',
                 color: AppColors.healthPrimary,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: Icons.self_improvement,
                 title: 'Practice Gratitude',

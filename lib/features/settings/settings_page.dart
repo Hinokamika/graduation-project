@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/config/theme_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:final_project/services/user_service.dart';
 import 'package:final_project/features/profile/user_page.dart';
@@ -23,9 +24,15 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _biometricEnabled = false;
 
   @override
+  void initState() {
+    super.initState();
+    _darkModeEnabled = ThemeController.instance.mode.value == ThemeMode.dark;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Settings', style: AppTextStyles.heading3),
         backgroundColor: Colors.transparent,
@@ -94,7 +101,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Text(
       title,
       style: AppTextStyles.subtitle.copyWith(
-        color: AppColors.textPrimary,
+        color: Theme.of(context).colorScheme.onSurface,
       ),
     );
   }
@@ -102,9 +109,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildAccountSettings() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -150,9 +157,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildAppPreferences() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -179,7 +186,8 @@ class _SettingsPageState extends State<SettingsPage> {
               setState(() {
                 _darkModeEnabled = value;
               });
-              _showComingSoon('Dark Mode');
+              ThemeController.instance
+                  .setMode(value ? ThemeMode.dark : ThemeMode.light);
             },
           ),
           
@@ -205,9 +213,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildPrivacySettings() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -249,9 +257,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSupportSettings() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -293,9 +301,9 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildAboutSettings() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -324,7 +332,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildDangerZone() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
       ),
@@ -386,13 +394,13 @@ class _SettingsPageState extends State<SettingsPage> {
       title: Text(
         title,
         style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
         ),
       ),
       trailing: onTap != null
@@ -430,13 +438,13 @@ class _SettingsPageState extends State<SettingsPage> {
       title: Text(
         title,
         style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         subtitle,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
         ),
       ),
       trailing: Switch(
@@ -453,7 +461,7 @@ class _SettingsPageState extends State<SettingsPage> {
       thickness: 1,
       indent: 72,
       endIndent: 16,
-      color: AppColors.divider,
+      color: Theme.of(context).dividerColor,
     );
   }
 

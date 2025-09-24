@@ -1,3 +1,4 @@
+import 'package:final_project/features/chat/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:final_project/utils/app_colors.dart';
@@ -22,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const OverviewPage(),
     const ExercisePage(),
+    const ChatPage(),
     const MealPage(),
     const RelaxPage(),
   ];
@@ -29,7 +31,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         top: true,
         bottom: false,
@@ -58,14 +60,19 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: horizontal, vertical: vertical),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.5),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: Theme.of(context).cardColor,
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.5),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -84,7 +91,7 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'Your Health Companion',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
             ],
@@ -97,7 +104,7 @@ class _HomePageState extends State<HomePage> {
               IconButton(
                 icon: Icon(
                   CupertinoIcons.gear,
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).colorScheme.onSurface,
                   size: 24,
                 ),
                 onPressed: () {
@@ -118,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                   IconButton(
                     icon: Icon(
                       CupertinoIcons.bell,
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                       size: 24,
                     ),
                     onPressed: () {
@@ -164,8 +171,8 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(
                     color: AppColors.healthSecondary,
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.divider,
+                  border: Border.all(
+                      color: Theme.of(context).dividerColor,
                       width: 1,
                     ),
                   ),
@@ -185,49 +192,84 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBottomNavbar() {
     final width = MediaQuery.of(context).size.width;
-    final isSmall = width < 360;
-    final barHeight = isSmall ? 72.0 : 80.0;
+    final isCompact = width < 360;
+    final isMedium = width < 420;
+    final barHeight = isCompact ? 64.0 : (isMedium ? 72.0 : 80.0);
+    // Make the navbar wider by reducing horizontal margins
+    final horizontal = isCompact ? 8.0 : 12.0;
+    // Make it floating with a smaller bottom margin
+    final bottom = 4.0;
+    final iconSize = isCompact ? 20.0 : 24.0;
+    final showLabels = width >= 360; // hide labels on compact to prevent overflow
+
+    // Shorten labels on medium widths to avoid overflow
+    final overviewLabel = isMedium ? 'Home' : 'Overview';
+    final workoutLabel = isMedium ? 'Work' : 'Workout';
+
     return SafeArea(
       top: false,
       child: Container(
+        margin: EdgeInsets.fromLTRB(horizontal, 0, horizontal, bottom),
         height: barHeight,
         decoration: BoxDecoration(
-          color: AppColors.white,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.divider.withValues(alpha: 0.5),
-              blurRadius: 8,
-              offset: const Offset(0, -2),
-            ),
-          ],
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Theme.of(context).brightness == Brightness.dark
+              ? Border.all(color: Theme.of(context).dividerColor)
+              : null,
+          boxShadow: Theme.of(context).brightness == Brightness.dark
+              ? []
+              : [
+                  BoxShadow(
+                    color: AppColors.divider.withValues(alpha: 0.45),
+                    blurRadius: 14,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildNavItem(
+            Expanded(child: _buildNavItem(
               icon: CupertinoIcons.square_grid_2x2,
               selectedIcon: CupertinoIcons.square_grid_2x2_fill,
-              label: 'Overview',
+              label: overviewLabel,
               index: 0,
-            ),
-            _buildNavItem(
+              showLabel: showLabels,
+              iconSize: iconSize,
+            )),
+            Expanded(child: _buildNavItem(
               icon: CupertinoIcons.sportscourt,
               selectedIcon: CupertinoIcons.sportscourt_fill,
-              label: 'Exercise',
+              label: workoutLabel,
               index: 1,
-            ),
-            _buildNavItem(
+              showLabel: showLabels,
+              iconSize: iconSize,
+            )),
+            Expanded(child: _buildNavItem(
+              icon: CupertinoIcons.chat_bubble,
+              selectedIcon: CupertinoIcons.chat_bubble_fill,
+              label: 'Chat',
+              index: 2,
+              showLabel: showLabels,
+              iconSize: iconSize,
+            )),
+            Expanded(child: _buildNavItem(
               icon: CupertinoIcons.heart,
               selectedIcon: CupertinoIcons.heart_fill,
               label: 'Meal',
-              index: 2,
-            ),
-            _buildNavItem(
+              index: 3,
+              showLabel: showLabels,
+              iconSize: iconSize,
+            )),
+            Expanded(child: _buildNavItem(
               icon: CupertinoIcons.leaf_arrow_circlepath,
               selectedIcon: CupertinoIcons.leaf_arrow_circlepath,
               label: 'Relax',
-              index: 3,
-            ),
+              index: 4,
+              showLabel: showLabels,
+              iconSize: iconSize,
+            )),
           ],
         ),
       ),
@@ -239,40 +281,57 @@ class _HomePageState extends State<HomePage> {
     required IconData selectedIcon,
     required String label,
     required int index,
+    required bool showLabel,
+    required double iconSize,
   }) {
     final isSelected = _currentIndex == index;
     
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.accent.withValues(alpha: 0.1) 
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? selectedIcon : icon,
-              color: isSelected ? AppColors.accent : AppColors.textLight,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          padding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.accent.withValues(alpha: 0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Icon(
+                isSelected ? selectedIcon : icon,
                 color: isSelected ? AppColors.accent : AppColors.textLight,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                size: iconSize,
               ),
-            ),
-          ],
+              if (showLabel) ...[
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isSelected ? AppColors.accent : AppColors.textLight,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

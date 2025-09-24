@@ -41,7 +41,7 @@ class _ExercisePageState extends State<ExercisePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -75,15 +75,20 @@ class _ExercisePageState extends State<ExercisePage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.5),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +108,7 @@ class _ExercisePageState extends State<ExercisePage> {
                   Text(
                     'Stay Active, Stay Healthy',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -168,7 +173,7 @@ class _ExercisePageState extends State<ExercisePage> {
           Text(
             title,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 4),
@@ -218,15 +223,20 @@ class _ExercisePageState extends State<ExercisePage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +275,7 @@ class _ExercisePageState extends State<ExercisePage> {
               Text(
                 'Complete 3 sets of each exercise with 60s rest between sets.',
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 20),
@@ -332,13 +342,13 @@ class _ExercisePageState extends State<ExercisePage> {
           width: 24,
           height: 24,
           decoration: BoxDecoration(
-            color: completed ? AppColors.success : AppColors.divider,
+            color: completed ? AppColors.success : Theme.of(context).dividerColor,
             shape: BoxShape.circle,
           ),
           child: completed
               ? Icon(
                   Icons.check,
-                  color: AppColors.white,
+                  color: Colors.white,
                   size: 16,
                 )
               : null,
@@ -348,7 +358,7 @@ class _ExercisePageState extends State<ExercisePage> {
           child: Text(
             name,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               decoration: completed ? TextDecoration.lineThrough : null,
             ),
           ),
@@ -356,7 +366,7 @@ class _ExercisePageState extends State<ExercisePage> {
         Text(
           sets,
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -375,27 +385,32 @@ class _ExercisePageState extends State<ExercisePage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Workout Days',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+          Text(
+            'Workout Days',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
                   Text(
                     '4/5 completed',
                     style: AppTextStyles.bodySmall.copyWith(
@@ -435,7 +450,9 @@ class _ExercisePageState extends State<ExercisePage> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: completed ? AppColors.success.withValues(alpha: 0.1) : AppColors.divider.withValues(alpha: 0.3),
+          color: completed
+              ? AppColors.success.withValues(alpha: 0.1)
+              : Theme.of(context).dividerColor.withOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -515,15 +532,20 @@ class _ExercisePageState extends State<ExercisePage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Theme.of(context).brightness == Brightness.dark
+            ? Border.all(color: Theme.of(context).dividerColor)
+            : null,
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.divider.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         children: [
@@ -544,7 +566,7 @@ class _ExercisePageState extends State<ExercisePage> {
           Text(
             title,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -552,7 +574,7 @@ class _ExercisePageState extends State<ExercisePage> {
           Text(
             '$exercises exercises',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],
@@ -571,15 +593,20 @@ class _ExercisePageState extends State<ExercisePage> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -590,7 +617,7 @@ class _ExercisePageState extends State<ExercisePage> {
                 calories: '280 cal',
                 color: AppColors.accent,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildWorkoutItem(
                 title: 'Upper Body Strength',
                 time: 'Yesterday, 6:00 PM',
@@ -598,7 +625,7 @@ class _ExercisePageState extends State<ExercisePage> {
                 calories: '320 cal',
                 color: AppColors.warning,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildWorkoutItem(
                 title: 'Evening Yoga',
                 time: '2 days ago, 8:00 PM',
@@ -637,13 +664,13 @@ class _ExercisePageState extends State<ExercisePage> {
       title: Text(
         title,
         style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
       subtitle: Text(
         time,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
         ),
       ),
       trailing: Column(
@@ -653,14 +680,14 @@ class _ExercisePageState extends State<ExercisePage> {
           Text(
             duration,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
           Text(
             calories,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],

@@ -69,14 +69,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -110,7 +110,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       decoration: BoxDecoration(
                         color: AppColors.healthSecondary,
                         borderRadius: BorderRadius.circular(36),
-                        border: Border.all(color: AppColors.divider, width: 1),
+                        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
                       ),
                       child: Icon(
                         Icons.mail_outline,
@@ -154,15 +154,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     decoration: InputDecoration(
                       hintText: 'Enter your email address',
                       hintStyle: AppTextStyles.hint,
-                      filled: true,
-                      fillColor: AppColors.surface,
+                      // Use themed fill from InputDecorationTheme
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.divider),
+                        borderSide: BorderSide(color: Theme.of(context).dividerColor),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.divider),
+                        borderSide: BorderSide(color: Theme.of(context).dividerColor),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -254,7 +253,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           ? null
                           : () => Navigator.pop(context),
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
+                        foregroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         padding: const EdgeInsets.symmetric(
                           vertical: 12,
                           horizontal: 24,
@@ -263,7 +262,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       child: Text(
                         'Back to Login',
                         style: AppTextStyles.buttonSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     ),

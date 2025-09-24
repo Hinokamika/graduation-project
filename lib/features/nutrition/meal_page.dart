@@ -111,7 +111,7 @@ class _MealPageState extends State<MealPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -149,11 +149,13 @@ class _MealPageState extends State<MealPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.divider.withValues(alpha: 0.5),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black45
+                : AppColors.divider.withValues(alpha: 0.5),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -177,7 +179,7 @@ class _MealPageState extends State<MealPage> {
                   Text(
                     'Fuel Your Body Right',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                 ],
@@ -248,7 +250,7 @@ class _MealPageState extends State<MealPage> {
           Text(
             title,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 4),
@@ -262,7 +264,7 @@ class _MealPageState extends State<MealPage> {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress.clamp(0.0, 1.0),
-            backgroundColor: AppColors.divider,
+            backgroundColor: Theme.of(context).dividerColor,
             valueColor: AlwaysStoppedAnimation<Color>(color),
             borderRadius: BorderRadius.circular(4),
           ),
@@ -283,11 +285,13 @@ class _MealPageState extends State<MealPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black45
+                    : AppColors.divider.withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -353,7 +357,7 @@ class _MealPageState extends State<MealPage> {
           child: Text(
             title,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),
@@ -362,20 +366,20 @@ class _MealPageState extends State<MealPage> {
           child: Text(
             '$value / $target',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
         ),
-        Expanded(
-          flex: 2,
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: AppColors.divider,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            borderRadius: BorderRadius.circular(4),
+          Expanded(
+            flex: 2,
+            child: LinearProgressIndicator(
+              value: progress,
+            backgroundColor: Theme.of(context).dividerColor,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -391,15 +395,20 @@ class _MealPageState extends State<MealPage> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -411,7 +420,7 @@ class _MealPageState extends State<MealPage> {
                 completed: true,
                 color: AppColors.success,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildMealItem(
                 mealType: 'Lunch',
                 time: '12:30 PM',
@@ -420,7 +429,7 @@ class _MealPageState extends State<MealPage> {
                 completed: true,
                 color: AppColors.success,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildMealItem(
                 mealType: 'Snack',
                 time: '3:00 PM',
@@ -429,7 +438,7 @@ class _MealPageState extends State<MealPage> {
                 completed: true,
                 color: AppColors.success,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildMealItem(
                 mealType: 'Dinner',
                 time: '7:00 PM',
@@ -458,12 +467,14 @@ class _MealPageState extends State<MealPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: completed ? color.withValues(alpha: 0.1) : AppColors.divider.withValues(alpha: 0.3),
+          color: completed
+              ? color.withValues(alpha: 0.1)
+              : Theme.of(context).dividerColor.withOpacity(0.3),
           shape: BoxShape.circle,
         ),
         child: Icon(
           completed ? CupertinoIcons.check_mark : CupertinoIcons.circle,
-          color: completed ? color : AppColors.textLight,
+          color: completed ? color : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           size: 20,
         ),
       ),
@@ -473,13 +484,13 @@ class _MealPageState extends State<MealPage> {
           Text(
             mealType,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           Text(
             name,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -487,13 +498,13 @@ class _MealPageState extends State<MealPage> {
       subtitle: Text(
         time,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textLight,
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
         ),
       ),
       trailing: Text(
         calories,
         style: AppTextStyles.bodySmall.copyWith(
-          color: AppColors.textPrimary,
+          color: Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -599,7 +610,7 @@ class _MealPageState extends State<MealPage> {
           Text(
             title,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -607,7 +618,7 @@ class _MealPageState extends State<MealPage> {
           Text(
             duration,
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
           const SizedBox(height: 4),
@@ -635,15 +646,20 @@ class _MealPageState extends State<MealPage> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -653,7 +669,7 @@ class _MealPageState extends State<MealPage> {
                   Text(
                     'Daily Goal: 2.5L',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   Text(
@@ -668,7 +684,7 @@ class _MealPageState extends State<MealPage> {
               const SizedBox(height: 16),
               LinearProgressIndicator(
                 value: 0.72,
-                backgroundColor: AppColors.divider,
+                backgroundColor: Theme.of(context).dividerColor,
                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.healthPrimary),
                 borderRadius: BorderRadius.circular(8),
                 minHeight: 12,
@@ -718,15 +734,20 @@ class _MealPageState extends State<MealPage> {
         const SizedBox(height: 16),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.divider.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: Theme.of(context).brightness == Brightness.dark
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : [
+                    BoxShadow(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
           ),
           child: Column(
             children: [
@@ -736,14 +757,14 @@ class _MealPageState extends State<MealPage> {
                 description: 'Drink at least 8 glasses of water daily for optimal body function.',
                 color: AppColors.info,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: CupertinoIcons.heart_fill,
                 title: 'Eat More Fruits',
                 description: 'Aim for 5 servings of fruits and vegetables daily.',
                 color: AppColors.success,
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
                 icon: CupertinoIcons.moon,
                 title: 'Don\'t Skip Meals',

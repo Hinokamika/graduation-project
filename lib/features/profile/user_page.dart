@@ -62,7 +62,7 @@ class _UserPageState extends State<UserPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('Profile', style: AppTextStyles.heading3),
         backgroundColor: Colors.transparent,
@@ -71,7 +71,7 @@ class _UserPageState extends State<UserPage> {
         leading: IconButton(
           icon: Icon(
             CupertinoIcons.back,
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
             size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -136,7 +136,7 @@ class _UserPageState extends State<UserPage> {
               color: AppColors.healthSecondary,
               shape: BoxShape.circle,
               border: Border.all(
-                color: AppColors.divider,
+                color: Theme.of(context).dividerColor,
                 width: 2,
               ),
             ),
@@ -167,7 +167,7 @@ class _UserPageState extends State<UserPage> {
           Text(
             displayName,
             style: AppTextStyles.title.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           
@@ -177,7 +177,7 @@ class _UserPageState extends State<UserPage> {
           Text(
             user?.email ?? '',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],
@@ -192,7 +192,7 @@ class _UserPageState extends State<UserPage> {
         Text(
           'Account Information',
           style: AppTextStyles.subtitle.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         
@@ -268,7 +268,7 @@ class _UserPageState extends State<UserPage> {
         Text(
           'Health Information',
           style: AppTextStyles.subtitle.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         
@@ -332,7 +332,7 @@ class _UserPageState extends State<UserPage> {
         Text(
           'Account Actions',
           style: AppTextStyles.subtitle.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         
@@ -403,9 +403,9 @@ class _UserPageState extends State<UserPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -432,14 +432,14 @@ class _UserPageState extends State<UserPage> {
                 Text(
                   title,
                   style: AppTextStyles.label.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
