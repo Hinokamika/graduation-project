@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 /// Healthcare MCP API client for making HTTP requests to healthcare services
 class HealthcareMcpApi {
-  static final String _mcp_server = dotenv.env['MCP_SERVER'] ?? '';
+  static final String _api_server = dotenv.env['API_SERVER'] ?? '';
   static final String _chat_server = dotenv.env['CHAT_SERVER'] ?? '';
   static const Duration _timeout = Duration(seconds: 30);
 
@@ -61,7 +61,7 @@ class HealthcareMcpApi {
         'fitness_level': fitnessLevel,
       };
 
-      final url = Uri.parse('$_mcp_server/generate_plan');
+      final url = Uri.parse('$_api_server/generate_plan');
 
       final response = await http
           .post(url, headers: _headers, body: json.encode(data))

@@ -33,6 +33,51 @@ class _UserPageState extends State<UserPage> {
       final userProfile = await _userService.getUserProfile();
       final user = _supabase.auth.currentUser;
 
+      // Fetch saved plans (best-effort; ignore if schema not ready)
+      Map<String, dynamic>? workoutPlan;
+      Map<String, dynamic>? relaxPlan;
+      List<Map<String, dynamic>> mealDays = [];
+      if (user != null) {
+        try {
+          workoutPlan = await _supabase
+              .from('workout_plan')
+              .select('id,exercise_name,description,difficulty_level,exercise_category,created_at')
+              .eq('user_id', user.id)
+              .order('created_at', ascending: false)
+              .limit(1)
+              .maybeSingle();
+        } catch (_) {
+          try {
+            workoutPlan = await _supabase
+                .from('workout_plan')
+                .select('id,exercise_name,description,difficulty_level,exercise_category')
+                .eq('user_id', user.id)
+                .order('id', ascending: false)
+                .limit(1)
+                .maybeSingle();
+          } catch (_) {}
+        }
+        try {
+          relaxPlan = await _supabase
+              .from('relax_plan')
+              .select('id,title,description,relaxation_type')
+              .eq('user_id', user.id)
+              .order('id', ascending: false)
+              .limit(1)
+              .maybeSingle();
+        } catch (_) {}
+        try {
+          final resp = await _supabase
+              .from('meal_plan')
+              .select('day_index,day_label,meals,snacks')
+              .eq('user_id', user.id)
+              .order('day_index', ascending: true);
+          if (resp is List) {
+            mealDays = List<Map<String, dynamic>>.from(resp);
+          }
+        } catch (_) {}
+      }
+
       setState(() {
         _userData = {
           ...?userProfile,
@@ -40,6 +85,9 @@ class _UserPageState extends State<UserPage> {
           // Prefer values from Supabase user_metadata if present
           'display_name': _extractDisplayName(user),
           'photo_url': _extractPhotoUrl(user),
+          if (workoutPlan != null) 'workout_plan': workoutPlan,
+          if (relaxPlan != null) 'relax_plan': relaxPlan,
+          if (mealDays.isNotEmpty) 'meal_plan_days': mealDays,
         };
         _isLoading = false;
       });
@@ -97,6 +145,15 @@ class _UserPageState extends State<UserPage> {
                   // Health Data
                   if (_userData?['survey_data'] != null) ...[
                     _buildHealthDataSection(),
+                    const SizedBox(height: 32),
+                  ],
+
+                  // Saved Plans
+                  if (_userData?['workout_plan'] != null ||
+                      _userData?['relax_plan'] != null ||
+                      (_userData?['meal_plan_days'] is List &&
+                          (_userData?['meal_plan_days'] as List).isNotEmpty)) ...[
+                    _buildSavedPlansSection(),
                     const SizedBox(height: 32),
                   ],
 
@@ -386,6 +443,71 @@ class _UserPageState extends State<UserPage> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildSavedPlansSection() {
+    final wp = _userData?['workout_plan'] as Map<String, dynamic>?;
+    final rp = _userData?['relax_plan'] as Map<String, dynamic>?;
+    final meals = (_userData?['meal_plan_days'] is List)
+        ? List<Map<String, dynamic>>.from(
+            _userData!['meal_plan_days'] as List,
+          )
+        : <Map<String, dynamic>>[];
+
+    String? wpSummary;
+    if (wp != null) {
+      final name = (wp['exercise_name'] ?? 'Workout Plan').toString();
+      final diff = (wp['difficulty_level'] ?? '').toString();
+      final cat = (wp['exercise_category'] ?? '').toString();
+      final tags = [if (diff.isNotEmpty) diff, if (cat.isNotEmpty) cat].join(' • ');
+      wpSummary = tags.isNotEmpty ? '$name — $tags' : name;
+    }
+
+    String? rpSummary;
+    if (rp != null) {
+      final title = (rp['title'] ?? 'Relax Plan').toString();
+      final rtype = (rp['relaxation_type'] ?? '').toString();
+      rpSummary = rtype.isNotEmpty ? '$title — $rtype' : title;
+    }
+
+    String? mealSummary;
+    if (meals.isNotEmpty) {
+      final count = meals.length;
+      mealSummary = '$count day${count == 1 ? '' : 's'} saved';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Saved Plans',
+          style: AppTextStyles.subtitle.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (wpSummary != null)
+          _buildInfoTile(
+            icon: Icons.fitness_center_outlined,
+            title: 'Workout Plan',
+            value: wpSummary,
+          ),
+        if (wpSummary != null) const SizedBox(height: 12),
+        if (rpSummary != null)
+          _buildInfoTile(
+            icon: Icons.self_improvement_outlined,
+            title: 'Relax Plan',
+            value: rpSummary,
+          ),
+        if (rpSummary != null) const SizedBox(height: 12),
+        if (mealSummary != null)
+          _buildInfoTile(
+            icon: Icons.restaurant_outlined,
+            title: 'Meal Plan',
+            value: mealSummary,
+          ),
       ],
     );
   }

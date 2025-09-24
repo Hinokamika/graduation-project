@@ -9,7 +9,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reset_password_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final bool returnOnSuccess;
+  const LoginPage({super.key, this.returnOnSuccess = false});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -47,8 +48,12 @@ class _LoginPageState extends State<LoginPage> {
       await userService.syncLocalSurveyToSupabase();
 
       if (!mounted) return;
-      // Navigate to home page on successful login
-      Navigator.of(context).pushReplacementNamed('/home');
+      if (widget.returnOnSuccess) {
+        Navigator.of(context).pop(true);
+      } else {
+        // Navigate to home page on successful login
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

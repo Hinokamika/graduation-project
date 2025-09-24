@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/user_service.dart';
-import 'package:final_project/features/auth/auth_options_page.dart';
+import 'package:final_project/features/plan/plan_loading_page.dart';
 
 class SurveyPage extends StatefulWidget {
   const SurveyPage({super.key});
@@ -27,23 +27,13 @@ class _SurveyPageState extends State<SurveyPage> {
   String? _selectedGender;
   String? _selectedActivityLevel;
   String? _selectedDietType;
-  final List<String> _healthConditions = [];
 
-  final List<String> _activityLevels = [
-    'Sedentary (little to no exercise)',
-    'Lightly active (light exercise 1-3 days/week)',
-    'Moderately active (moderate exercise 3-5 days/week)',
-    'Very active (hard exercise 6-7 days/week)',
-  ];
+  final List<String> _activityLevels = ['beginner', 'intermediate', 'advanced'];
 
   final List<String> _dietTypes = [
-    'Balanced',
-    'Low Carb',
-    'High Protein',
-    'Vegetarian',
-    'Vegan',
-    'Keto',
-    'Mediterranean',
+    'lost_weight',
+    'maintain_weight',
+    'gain_weight',
   ];
 
   @override
@@ -313,7 +303,7 @@ class _SurveyPageState extends State<SurveyPage> {
 
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saving your information...')),
+        const SnackBar(content: Text('Processing your information...')),
       );
 
       try {
@@ -329,7 +319,7 @@ class _SurveyPageState extends State<SurveyPage> {
           'created_at': DateTime.now().toIso8601String(),
         };
 
-        // Save survey data using UserService
+        // Save survey data locally/Supabase (non-blocking for API)
         final userService = UserService();
         await userService.saveSurveyData(surveyData);
 
@@ -338,25 +328,13 @@ class _SurveyPageState extends State<SurveyPage> {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
         }
 
-        // Show success toast then navigate
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Profile saved. Continue to sign in or create account.',
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(milliseconds: 1200),
-            ),
-          );
-
-          await Future.delayed(const Duration(milliseconds: 900));
-
-          if (!mounted) return;
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const AuthOptionsPage()),
-          );
-        }
+        // Navigate to loading page to generate plan
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PlanLoadingPage(survey: surveyData),
+          ),
+        );
       } catch (e) {
         // Hide loading indicator
         if (mounted) {

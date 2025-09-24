@@ -224,7 +224,6 @@ class _MealPageState extends State<MealPage> {
             ],
           ),
           const SizedBox(height: 12),
-          _buildGoalSelector(),
         ],
       ),
     );
@@ -800,91 +799,91 @@ class _MealPageState extends State<MealPage> {
     );
   }
 
-  Widget _buildGoalSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Goal',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            _goalChip('Lose'),
-            const SizedBox(width: 8),
-            _goalChip('Maintain'),
-            const SizedBox(width: 8),
-            _goalChip('Gain'),
-            const Spacer(),
-            if (_goal.toLowerCase() != 'maintain') _deltaChips(),
-          ],
-        ),
-      ],
-    );
-  }
+  // Widget _buildGoalSelector() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         'Goal',
+  //         style: AppTextStyles.bodySmall.copyWith(
+  //           color: AppColors.textSecondary,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 8),
+  //       Row(
+  //         children: [
+  //           _goalChip('Lose'),
+  //           const SizedBox(width: 8),
+  //           _goalChip('Maintain'),
+  //           const SizedBox(width: 8),
+  //           _goalChip('Gain'),
+  //           const Spacer(),
+  //           if (_goal.toLowerCase() != 'maintain') _deltaChips(),
+  //         ],
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _goalChip(String label) {
-    final v = label.toLowerCase();
-    final selected = _goal == v;
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (s) async {
-        if (!s) return;
-        setState(() => _goal = v);
-        await UserService().setNutritionGoal(v);
-        if (_survey != null) {
-          final targets = NutritionCalculator.computeTargetsFromSurvey(
-            _survey!,
-            goal: _goal,
-            deltaPercent: _goalDelta,
-          );
-          if (!mounted) return;
-          setState(() {
-            _targetsFromProfile = true;
-            _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
-            _targetProtein = (targets['protein_g'] ?? _targetProtein)
-                .toDouble();
-            _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
-            _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
-          });
-        }
-      },
-    );
-  }
+  // Widget _goalChip(String label) {
+  //   final v = label.toLowerCase();
+  //   final selected = _goal == v;
+  //   return ChoiceChip(
+  //     label: Text(label),
+  //     selected: selected,
+  //     onSelected: (s) async {
+  //       if (!s) return;
+  //       setState(() => _goal = v);
+  //       await UserService().setNutritionGoal(v);
+  //       if (_survey != null) {
+  //         final targets = NutritionCalculator.computeTargetsFromSurvey(
+  //           _survey!,
+  //           goal: _goal,
+  //           deltaPercent: _goalDelta,
+  //         );
+  //         if (!mounted) return;
+  //         setState(() {
+  //           _targetsFromProfile = true;
+  //           _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+  //           _targetProtein = (targets['protein_g'] ?? _targetProtein)
+  //               .toDouble();
+  //           _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+  //           _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+  //         });
+  //       }
+  //     },
+  //   );
+  // }
 
-  Widget _deltaChips() {
-    Widget chip(int p) => Padding(
-      padding: const EdgeInsets.only(left: 4),
-      child: ChoiceChip(
-        label: Text('$p%'),
-        selected: _goalDelta == p,
-        onSelected: (s) async {
-          if (!s) return;
-          setState(() => _goalDelta = p);
-          await UserService().setNutritionGoalDelta(p);
-          if (_survey != null) {
-            final targets = NutritionCalculator.computeTargetsFromSurvey(
-              _survey!,
-              goal: _goal,
-              deltaPercent: _goalDelta,
-            );
-            if (!mounted) return;
-            setState(() {
-              _targetsFromProfile = true;
-              _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
-              _targetProtein = (targets['protein_g'] ?? _targetProtein)
-                  .toDouble();
-              _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
-              _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
-            });
-          }
-        },
-      ),
-    );
-    return Row(children: [chip(10), chip(15), chip(20)]);
-  }
+  // Widget _deltaChips() {
+  //   Widget chip(int p) => Padding(
+  //     padding: const EdgeInsets.only(left: 4),
+  //     child: ChoiceChip(
+  //       label: Text('$p%'),
+  //       selected: _goalDelta == p,
+  //       onSelected: (s) async {
+  //         if (!s) return;
+  //         setState(() => _goalDelta = p);
+  //         await UserService().setNutritionGoalDelta(p);
+  //         if (_survey != null) {
+  //           final targets = NutritionCalculator.computeTargetsFromSurvey(
+  //             _survey!,
+  //             goal: _goal,
+  //             deltaPercent: _goalDelta,
+  //           );
+  //           if (!mounted) return;
+  //           setState(() {
+  //             _targetsFromProfile = true;
+  //             _targetKcal = (targets['energy_kcal'] ?? _targetKcal).toDouble();
+  //             _targetProtein = (targets['protein_g'] ?? _targetProtein)
+  //                 .toDouble();
+  //             _targetFat = (targets['fat_g'] ?? _targetFat).toDouble();
+  //             _targetCarbs = (targets['carbs_g'] ?? _targetCarbs).toDouble();
+  //           });
+  //         }
+  //       },
+  //     ),
+  //   );
+  //   return Row(children: [chip(10), chip(15), chip(20)]);
+  // }
 }

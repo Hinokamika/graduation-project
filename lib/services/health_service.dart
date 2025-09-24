@@ -13,13 +13,13 @@ class HealthService {
 
   // The health data types we want to read.
   static final List<HealthDataType> _readTypes = <HealthDataType>[
-    HealthDataType.HEIGHT,
-    HealthDataType.WEIGHT,
     HealthDataType.STEPS,
     HealthDataType.HEART_RATE,
     HealthDataType.ACTIVE_ENERGY_BURNED,
     HealthDataType.DIETARY_ENERGY_CONSUMED,
     HealthDataType.SLEEP_SESSION,
+    HealthDataType.ACTIVE_ENERGY_BURNED,
+    HealthDataType.BODY_MASS_INDEX,
   ];
 
   Future<bool> hasPermissions() async {
@@ -36,56 +36,6 @@ class HealthService {
       permissions: _readTypes.map((_) => HealthDataAccess.READ).toList(),
     );
     return ok;
-  }
-
-  // Fetch the latest height and weight to help prefill the survey.
-  // Returns a map with keys: 'height' (double?), 'weight' (double?).
-  Future<Map<String, double?>> fetchLatestProfileMetrics() async {
-    final DateTime end = DateTime.now();
-    final DateTime start = DateTime(end.year - 2); // look back 2 years
-
-    final types = <HealthDataType>[
-      HealthDataType.HEIGHT,
-      HealthDataType.WEIGHT,
-    ];
-    final points = await _health.getHealthDataFromTypes(
-      types: types,
-      startTime: start,
-      endTime: end,
-    );
-
-    double? latestHeight;
-    double? latestWeight;
-    DateTime? latestHeightAt;
-    DateTime? latestWeightAt;
-
-    for (final p in points) {
-      if (p.type == HealthDataType.HEIGHT) {
-        final v = (p.value is num)
-            ? (p.value as num).toDouble()
-            : double.tryParse('${p.value}');
-        if (v != null) {
-          final prev = latestHeightAt;
-          if (prev == null || p.dateTo.isAfter(prev)) {
-            latestHeight = v;
-            latestHeightAt = p.dateTo;
-          }
-        }
-      } else if (p.type == HealthDataType.WEIGHT) {
-        final v = (p.value is num)
-            ? (p.value as num).toDouble()
-            : double.tryParse('${p.value}');
-        if (v != null) {
-          final prev = latestWeightAt;
-          if (prev == null || p.dateTo.isAfter(prev)) {
-            latestWeight = v;
-            latestWeightAt = p.dateTo;
-          }
-        }
-      }
-    }
-
-    return {'height': latestHeight, 'weight': latestWeight};
   }
 
   // Example: fetch total steps for today

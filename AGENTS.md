@@ -10,29 +10,31 @@
   - `widgets/` reusable UI (e.g., `auth_wrapper.dart`).
 - Platforms: `android/`, `ios/`, `web/`, `macos/`, `windows/`, `linux/`.
 - Tests live in `test/` mirroring `lib/`; design docs in `DESIGN_SYSTEM.md`.
+- Assets go under `assets/` and are declared in `pubspec.yaml`.
 
 ## Build, Test, and Development Commands
 - `flutter pub get` — install packages.
 - `flutter run` (web: `flutter run -d chrome`) — run locally.
-- `flutter analyze` — static analysis (fix all warnings before PR).
-- `dart format .` — apply Dart formatting across the repo.
+- `flutter analyze` — static analysis; resolve all warnings before PR.
+- `dart format .` — format Dart across the repo.
 - `flutter test` — run unit/widget tests.
 - `flutter build apk|ios|web` — production builds.
 
 ## Coding Style & Naming Conventions
-- Dart style (2-space indent), null safety, small composable widgets.
+- Dart style, 2-space indent, null safety, small composable widgets.
 - Names: Classes `UpperCamelCase`; methods/vars `lowerCamelCase`; files `snake_case.dart`.
 - File patterns: pages `*_page.dart`; services `*_service.dart`.
 - Linting via `flutter_lints` (`analysis_options.yaml`). Prefer `const`; avoid oversized widgets.
 
 ## Testing Guidelines
 - Framework: `flutter_test`.
-- Place tests in `test/` using `*_test.dart` mirroring `lib/` structure.
+- Place tests in `test/` using `*_test.dart`, mirroring `lib/`.
 - Focus widget tests on pages; unit tests on services/utils.
 - Cover critical flows (auth, navigation, profile, chat). Run `flutter test` before PR.
 
 ## Commit & Pull Request Guidelines
-- Conventional Commits (e.g., `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`). Keep PRs small and focused.
+- Conventional Commits (e.g., `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`).
+- Keep PRs small and focused.
 - PRs include: clear description, linked issues, screenshots/GIFs for UI changes, and test notes.
 - Update docs when behavior changes.
 
@@ -44,3 +46,5 @@
 ## Agent-Specific Instructions
 - Keep patches minimal and scoped; follow structure/naming above.
 - Avoid unrelated refactors. Run `flutter analyze` and `flutter test` before requesting review.
+- Scope: This file applies repo-wide from the project root.
+

@@ -10,7 +10,6 @@ import 'package:final_project/features/nutrition/meal_page.dart';
 import 'package:final_project/features/relax/relax_page.dart';
 import 'package:final_project/features/profile/user_page.dart';
 import 'package:final_project/features/settings/settings_page.dart';
-import 'package:final_project/features/demo/ui_components_demo.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
