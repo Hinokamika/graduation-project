@@ -106,10 +106,9 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton.icon(
+                    ElevatedButton(
                       onPressed: _start,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                      child: const Text('Retry'),
                     )
                   ],
                 ),

@@ -367,12 +367,12 @@ class _PlanResultPageState extends State<PlanResultPage> {
           const SizedBox(height: 16),
 
           // Show first 3 days as preview
-          for (int i = 0; i < days.length.clamp(0, 3); i++) ...[
+          for (int i = 0; i < days.length.clamp(0, 6); i++) ...[
             _buildDayCard(days[i] as Map<String, dynamic>),
-            if (i < days.length.clamp(0, 3) - 1) const SizedBox(height: 16),
+            if (i < days.length.clamp(0, 6) - 1) const SizedBox(height: 16),
           ],
 
-          if (days.length > 3) ...[
+          if (days.length > 6) ...[
             const SizedBox(height: 16),
             Container(
               width: double.infinity,
@@ -381,13 +381,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
                 color: AppColors.getSurface(context),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.getBorder(context)),
-              ),
-              child: Text(
-                '+ ${days.length - 3} more days in your complete plan',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.getTextSecondary(context),
-                ),
-                textAlign: TextAlign.center,
               ),
             ),
           ],

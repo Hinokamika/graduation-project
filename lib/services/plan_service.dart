@@ -1,9 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dto/plan_dto.dart';
 
 class PlanService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Save the plan into domain tables: workout_plan, relax_plan, and meal_plan.
+  /// Uses DTOs to transform AI output into DB rows.
   /// Also links created rows to `user_identity` via `exercise_id` and `relax_id`.
   Future<void> saveChildTables({
     required Map<String, dynamic> survey,
@@ -13,48 +15,15 @@ class PlanService {
     if (user == null) {
       throw Exception('Please sign in to save your plan.');
     }
-    // Build granular inserts from the AI plan
-    final days = plan['days'];
-    final List<Map<String, dynamic>> workoutInserts = [];
-    final List<Map<String, dynamic>> relaxInserts = [];
-    if (days is List) {
-      for (var i = 0; i < days.length; i++) {
-        final raw = days[i];
-        if (raw is! Map) continue;
-        final dayLabel = raw['day']?.toString() ?? 'Day ${i + 1}';
-        final trainings = raw['training'];
-        if (trainings is! List) continue;
-        for (final t in trainings) {
-          if (t is! Map) continue;
-          final type = t['type']?.toString() ?? '';
-          final focus = t['focus']?.toString();
-          final items = (t['items'] is List)
-              ? List<String>.from((t['items'] as List).map((e) => e.toString()))
-              : <String>[];
-          if (type == 'primary') {
-            for (final item in items) {
-              final parsed = _parseExerciseItem(item);
-              workoutInserts.add({
-                'exercise_name': parsed['name'] as String,
-                'description': (parsed['detail'] as String?) ?? focus ?? dayLabel,
-                'difficulty_level': survey['activity_level']?.toString(),
-                'exercise_category': _mapGoalToCategory(survey['diet_type']?.toString()),
-                if (parsed['duration'] != null) 'duration_minutes': parsed['duration'],
-                if (parsed['repetitions'] != null) 'repetitions': parsed['repetitions'],
-                'user_id': user.id,
-              });
-            }
-          } else if (type == 'recovery') {
-            relaxInserts.add({
-              'title': '$dayLabel — ${focus ?? 'Recovery'}',
-              'description': items.join('\n'),
-              'relaxation_type': focus ?? 'Recovery',
-              'user_id': user.id,
-            });
-          }
-        }
-      }
-    }
+    // Build DTOs from AI plan and survey
+    final bundle = PlanInsertDTOs.fromPlanSurvey(
+      plan: plan,
+      survey: survey,
+      userId: user.id,
+      mapGoalToCategory: _mapGoalToCategory,
+    );
+    final workoutInserts = bundle.workout.map((e) => e.toMap()).toList();
+    final relaxInserts = bundle.relax.map((e) => e.toMap()).toList();
 
     // Best-effort cleanup to avoid duplicate plans on repeated saves
     try {
@@ -133,27 +102,11 @@ class PlanService {
       }
     }
 
-    // Insert meal_plan rows (one per day)
+    // Insert meal_plan rows (one per day) from DTOs
     try {
-      final days = plan['days'];
-      if (days is List) {
-        final inserts = <Map<String, dynamic>>[];
-        for (var i = 0; i < days.length; i++) {
-          final d = days[i];
-          if (d is! Map) continue;
-          final meals = (d['meals'] is List) ? d['meals'] as List : const [];
-          final snacks = (d['snacks'] is List) ? d['snacks'] as List : const [];
-          inserts.add({
-            'user_id': user.id,
-            'day_index': i + 1,
-            'day_label': d['day']?.toString() ?? 'Day ${i + 1}',
-            'meals': meals,
-            'snacks': snacks,
-          });
-        }
-        if (inserts.isNotEmpty) {
-          await _supabase.from('meal_plan').insert(inserts);
-        }
+      final mealInserts = bundle.meals.map((e) => e.toMap()).toList();
+      if (mealInserts.isNotEmpty) {
+        await _supabase.from('meal_plan').insert(mealInserts);
       }
     } on PostgrestException catch (e) {
       final code = e.code ?? '';
@@ -208,40 +161,6 @@ class PlanService {
       // Non-fatal; user_identity linkage may fail if RLS prohibits updates
       // Ignore silently but could be logged if needed.
     }
-  }
-
-  num? _tryNum(dynamic v) {
-    if (v == null) return null;
-    if (v is num) return v;
-    if (v is String) return num.tryParse(v);
-    return null;
-  }
-
-  // Parse an exercise item string like
-  // "Bodyweight squats - 3x12" or "Light cycling - 20 min"
-  // Returns map: {name, detail?, duration?, repetitions?}
-  Map<String, String?> _parseExerciseItem(String item) {
-    final parts = item.split(RegExp(r"\s[-–—]\s"));
-    final name = parts.isNotEmpty ? parts.first.trim() : item.trim();
-    final tail = parts.length > 1 ? parts.sublist(1).join(' - ').trim() : null;
-    String? duration;
-    String? reps;
-    if (tail != null) {
-      final lower = tail.toLowerCase();
-      if (lower.contains('min')) {
-        final match = RegExp(r"(\d+)\s*min").firstMatch(lower);
-        if (match != null) duration = match.group(1);
-      }
-      if (RegExp(r"\b\d+x\d+\b").hasMatch(lower)) {
-        reps = RegExp(r"\b\d+x\d+\b").firstMatch(lower)?.group(0);
-      }
-    }
-    return {
-      'name': name,
-      'detail': tail,
-      'duration': duration,
-      'repetitions': reps,
-    };
   }
 
   String _mapGoalToCategory(String? goal) {
