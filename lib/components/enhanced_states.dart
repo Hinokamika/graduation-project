@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 
@@ -140,8 +140,8 @@ class EnhancedErrorState extends StatelessWidget {
                 color: AppColors.getErrorColor(context).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(
-                CupertinoIcons.exclamationmark_triangle,
+              child: FaIcon(
+                FontAwesomeIcons.triangleExclamation,
                 size: 48,
                 color: AppColors.getErrorColor(context),
               ),
@@ -170,8 +170,8 @@ class EnhancedErrorState extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: onRetry,
-                  icon: Icon(
-                    CupertinoIcons.refresh,
+                  icon: const FaIcon(
+                    FontAwesomeIcons.arrowsRotate,
                     size: 18,
                     color: Colors.white,
                   ),

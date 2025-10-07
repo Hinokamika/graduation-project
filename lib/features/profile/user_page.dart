@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
@@ -117,10 +117,10 @@ class _UserPageState extends State<UserPage> {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: Theme.of(context).colorScheme.onSurface,
-            size: 20,
+            size: 18,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -202,19 +202,22 @@ class _UserPageState extends State<UserPage> {
                       photoUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.person_outline,
+                        return const FaIcon(
+                          FontAwesomeIcons.user,
                           color: AppColors.healthPrimary,
-                          size: 40,
+                          size: 36,
                         );
                       },
                     ),
                   )
-                : Icon(
-                    Icons.person_outline,
-                    color: AppColors.healthPrimary,
-                    size: 40,
-                  ),
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 31, vertical: 24),
+                  child: const FaIcon(
+                      FontAwesomeIcons.user,
+                      color: AppColors.healthPrimary,
+                      size: 36,
+                    ),
+                ),
           ),
 
           const SizedBox(height: 16),
@@ -256,7 +259,7 @@ class _UserPageState extends State<UserPage> {
 
         // Email
         _buildInfoTile(
-          icon: Icons.email_outlined,
+          icon: FontAwesomeIcons.envelope,
           title: 'Email',
           value: _supabase.auth.currentUser?.email ?? 'Not available',
         ),
@@ -265,7 +268,7 @@ class _UserPageState extends State<UserPage> {
 
         // Member Since
         _buildInfoTile(
-          icon: Icons.calendar_today_outlined,
+          icon: FontAwesomeIcons.calendar,
           title: 'Member Since',
           value: _formatDate(_supabase.auth.currentUser?.createdAt),
         ),
@@ -274,7 +277,7 @@ class _UserPageState extends State<UserPage> {
 
         // Last Login
         _buildInfoTile(
-          icon: Icons.access_time_outlined,
+          icon: FontAwesomeIcons.clock,
           title: 'Last Login',
           value: _formatDate(_supabase.auth.currentUser?.lastSignInAt),
         ),
@@ -333,7 +336,7 @@ class _UserPageState extends State<UserPage> {
         // Age
         if (ageStr != null)
           _buildInfoTile(
-            icon: Icons.cake_outlined,
+            icon: FontAwesomeIcons.cakeCandles,
             title: 'Age',
             value: ageStr,
           ),
@@ -343,7 +346,7 @@ class _UserPageState extends State<UserPage> {
         // Gender
         if (genderStr != null)
           _buildInfoTile(
-            icon: Icons.wc_outlined,
+            icon: FontAwesomeIcons.venusMars,
             title: 'Gender',
             value: genderStr,
           ),
@@ -353,7 +356,7 @@ class _UserPageState extends State<UserPage> {
         // Height & Weight
         if (heightWeightStr != null)
           _buildInfoTile(
-            icon: Icons.height_outlined,
+            icon: FontAwesomeIcons.rulerVertical,
             title: 'Height & Weight',
             value: heightWeightStr,
           ),
@@ -363,7 +366,7 @@ class _UserPageState extends State<UserPage> {
         // Activity Level
         if (activityStr != null)
           _buildInfoTile(
-            icon: Icons.directions_run_outlined,
+            icon: FontAwesomeIcons.personRunning,
             title: 'Activity Level',
             value: activityStr,
           ),
@@ -373,7 +376,7 @@ class _UserPageState extends State<UserPage> {
         // Health Conditions
         if (conditionsStr != null)
           _buildInfoTile(
-            icon: Icons.medical_information_outlined,
+            icon: FontAwesomeIcons.notesMedical,
             title: 'Health Conditions',
             value: conditionsStr,
           ),
@@ -490,21 +493,21 @@ class _UserPageState extends State<UserPage> {
         const SizedBox(height: 16),
         if (wpSummary != null)
           _buildInfoTile(
-            icon: Icons.fitness_center_outlined,
+            icon: FontAwesomeIcons.dumbbell,
             title: 'Workout Plan',
             value: wpSummary,
           ),
         if (wpSummary != null) const SizedBox(height: 12),
         if (rpSummary != null)
           _buildInfoTile(
-            icon: Icons.self_improvement_outlined,
+            icon: FontAwesomeIcons.spa,
             title: 'Relax Plan',
             value: rpSummary,
           ),
         if (rpSummary != null) const SizedBox(height: 12),
         if (mealSummary != null)
           _buildInfoTile(
-            icon: Icons.restaurant_outlined,
+            icon: FontAwesomeIcons.utensils,
             title: 'Meal Plan',
             value: mealSummary,
           ),

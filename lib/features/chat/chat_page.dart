@@ -3,6 +3,7 @@ import 'package:final_project/services/chat_service.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -174,7 +175,7 @@ class _ChatPageState extends State<ChatPage> {
                                       ),
                                     ),
                                   )
-                                : const Icon(Icons.send, size: 20),
+                                : const FaIcon(FontAwesomeIcons.paperPlane, size: 18),
                           ),
                         ),
                       ],

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/health_service.dart';
@@ -194,7 +194,7 @@ class _MealPageState extends State<MealPage> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  CupertinoIcons.heart_fill,
+                  FontAwesomeIcons.solidHeart,
                   color: AppColors.success,
                   size: 26,
                 ),
@@ -470,7 +470,7 @@ class _MealPageState extends State<MealPage> {
           shape: BoxShape.circle,
         ),
         child: Icon(
-          completed ? CupertinoIcons.check_mark : CupertinoIcons.circle,
+          completed ? FontAwesomeIcons.check : FontAwesomeIcons.circle,
           color: completed
               ? color
               : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
@@ -524,7 +524,7 @@ class _MealPageState extends State<MealPage> {
                 duration: '4 weeks',
                 calories: '1,800 cal/day',
                 color: AppColors.accent,
-                icon: Icons.trending_down,
+                icon: FontAwesomeIcons.arrowTrendDown,
               ),
             ),
             const SizedBox(width: 16),
@@ -534,7 +534,7 @@ class _MealPageState extends State<MealPage> {
                 duration: '6 weeks',
                 calories: '2,500 cal/day',
                 color: AppColors.warning,
-                icon: Icons.fitness_center,
+                icon: FontAwesomeIcons.dumbbell,
               ),
             ),
           ],
@@ -548,7 +548,7 @@ class _MealPageState extends State<MealPage> {
                 duration: 'Ongoing',
                 calories: '2,200 cal/day',
                 color: AppColors.success,
-                icon: Icons.balance,
+                icon: FontAwesomeIcons.scaleBalanced,
               ),
             ),
             const SizedBox(width: 16),
@@ -558,7 +558,7 @@ class _MealPageState extends State<MealPage> {
                 duration: 'Ongoing',
                 calories: '2,000 cal/day',
                 color: AppColors.healthPrimary,
-                icon: Icons.eco,
+                icon: FontAwesomeIcons.leaf,
               ),
             ),
           ],
@@ -740,7 +740,7 @@ class _MealPageState extends State<MealPage> {
           child: Column(
             children: [
               _buildTipItem(
-                icon: CupertinoIcons.lightbulb,
+                icon: FontAwesomeIcons.lightbulb,
                 title: 'Stay Hydrated',
                 description:
                     'Drink at least 8 glasses of water daily for optimal body function.',
@@ -748,7 +748,7 @@ class _MealPageState extends State<MealPage> {
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
-                icon: CupertinoIcons.heart_fill,
+                icon: FontAwesomeIcons.solidHeart,
                 title: 'Eat More Fruits',
                 description:
                     'Aim for 5 servings of fruits and vegetables daily.',
@@ -756,7 +756,7 @@ class _MealPageState extends State<MealPage> {
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
-                icon: CupertinoIcons.moon,
+                icon: FontAwesomeIcons.moon,
                 title: 'Don\'t Skip Meals',
                 description:
                     'Regular meals help maintain stable blood sugar levels.',

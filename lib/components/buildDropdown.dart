@@ -1,6 +1,7 @@
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 Widget buildDropdown({
   required String? value,
@@ -110,8 +111,8 @@ Widget buildDropdown({
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.getTextPrimary(context),
           ),
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
+          icon: FaIcon(
+            FontAwesomeIcons.chevronDown,
             color: AppColors.getTextSecondary(context),
           ),
         ),

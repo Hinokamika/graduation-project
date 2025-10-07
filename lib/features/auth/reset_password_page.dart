@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../services/auth_service.dart';
 import '../../utils/app_colors.dart';
 import '../../utils/text_styles.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   const ResetPasswordPage({super.key});
@@ -74,10 +75,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         backgroundColor: Theme.of(context).cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: Theme.of(context).colorScheme.onSurface,
-            size: 20,
+            size: 18,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -115,9 +116,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           width: 1,
                         ),
                       ),
-                      child: Icon(
-                        Icons.mail_outline,
-                        size: 32,
+                      child: const FaIcon(
+                        FontAwesomeIcons.envelope,
+                        size: 28,
                         color: AppColors.accent,
                       ),
                     ),

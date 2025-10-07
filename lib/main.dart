@@ -1,6 +1,5 @@
 import 'package:final_project/features/chat/chat_page.dart';
 import 'package:flutter/material.dart';
-import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/features/onboarding/intro_page.dart';
 import 'package:final_project/features/auth/auth_options_page.dart';
 import 'package:final_project/features/auth/signup_page.dart';
@@ -16,36 +15,72 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:final_project/services/user_service.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:final_project/features/habit/history_page.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-  // Default Supabase configuration
-  String supabaseUrl = '';
-  String supabaseAnonKey = '';
+      // Default Supabase configuration
+      String supabaseUrl = '';
+      String supabaseAnonKey = '';
 
-  try {
-    // Try to load environment variables (for development)
-    await dotenv.load(fileName: ".env");
-    // Override with env values if available
-    supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
-    supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
-  } catch (e) {
-    // Using default config values (env file not found)
-    // In production, consider using a proper logging framework
-    debugPrint('Using default config values (env file not found): $e');
-  }
+      try {
+        // Try to load environment variables (for development)
+        await dotenv.load(fileName: ".env");
+        // Override with env values if available
+        supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
+        supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+      } catch (e) {
+        // Using default config values (env file not found)
+        // In production, consider using a proper logging framework
+        debugPrint('Using default config values (env file not found): $e');
+      }
 
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
-  // Start background sync for offline -> online transitions
-  await UserService().startSyncListeners();
-  // Ask for Apple Health permissions on first launch (iOS only)
-  await UserService().requestHealthPermissionsAtFirstLaunch();
-  // Debug: print Hive box info at startup in debug builds
-  if (kDebugMode) {
-    await UserService().debugPrintHiveInfo();
-  }
-  runApp(const MyApp());
+      if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+        debugPrint(
+          '[Config] Missing SUPABASE_URL or SUPABASE_ANON_KEY. Check your .env.',
+        );
+      }
+
+      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
+      // Start background sync for offline -> online transitions
+      await UserService().startSyncListeners();
+      // Ask for Apple Health permissions on first launch (iOS only)
+      await UserService().requestHealthPermissionsAtFirstLaunch();
+      // Debug: print Hive box info at startup in debug builds
+      if (kDebugMode) {
+        await UserService().debugPrintHiveInfo();
+      }
+      runApp(const MyApp());
+    },
+    (error, stack) async {
+      // Handle Supabase recoverSession failures gracefully (e.g., invalid refresh token)
+      final msg = error.toString();
+      final looksLikeRefreshTokenError =
+          msg.contains('refresh_token_not_found') ||
+          msg.contains('Invalid Refresh Token');
+      if (looksLikeRefreshTokenError) {
+        debugPrint(
+          '[Auth] Invalid/expired refresh token. Clearing local session.',
+        );
+        try {
+          // Clear only local session to avoid network dependency
+          await Supabase.instance.client.auth.signOut(
+            scope: SignOutScope.local,
+          );
+        } catch (_) {
+          // Ignore secondary errors
+        }
+      } else {
+        debugPrint('Unhandled error: $error');
+        debugPrint(stack.toString());
+      }
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -74,6 +109,7 @@ class MyApp extends StatelessWidget {
             '/user': (context) => const UserPage(),
             '/settings': (context) => const SettingsPage(),
             '/chat': (context) => const ChatPage(),
+            '/habit_history': (context) => const HabitHistoryPage(),
           },
         );
       },

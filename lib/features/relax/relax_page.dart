@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/health_service.dart';
@@ -149,10 +149,10 @@ class _RelaxPageState extends State<RelaxPage> {
                   color: AppColors.wellness.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  CupertinoIcons.heart,
+                child: const FaIcon(
+                  FontAwesomeIcons.heart,
                   color: AppColors.wellness,
-                  size: 30,
+                  size: 26,
                 ),
               ),
             ],
@@ -352,7 +352,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 duration: '10 min',
                 type: 'Breathing',
                 color: AppColors.healthPrimary,
-                icon: CupertinoIcons.sun_max,
+                icon: FontAwesomeIcons.sun,
               ),
             ),
             const SizedBox(width: 16),
@@ -362,7 +362,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 duration: '15 min',
                 type: 'Guided',
                 color: AppColors.wellness,
-                icon: CupertinoIcons.sparkles,
+                icon: FontAwesomeIcons.wandMagicSparkles,
               ),
             ),
           ],
@@ -376,7 +376,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 duration: '20 min',
                 type: 'Relaxation',
                 color: AppColors.info,
-                icon: CupertinoIcons.moon,
+                icon: FontAwesomeIcons.moon,
               ),
             ),
             const SizedBox(width: 16),
@@ -386,7 +386,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 duration: '5 min',
                 type: 'Quick',
                 color: AppColors.accent,
-                icon: CupertinoIcons.scope,
+                icon: FontAwesomeIcons.crosshairs,
               ),
             ),
           ],
@@ -545,7 +545,7 @@ class _RelaxPageState extends State<RelaxPage> {
               color: color.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.air, color: color, size: 20),
+            child: Icon(FontAwesomeIcons.wind, color: color, size: 18),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -701,7 +701,7 @@ class _RelaxPageState extends State<RelaxPage> {
           child: Column(
             children: [
               _buildTipItem(
-                icon: Icons.nature,
+                icon: FontAwesomeIcons.leaf,
                 title: 'Connect with Nature',
                 description:
                     'Spend time outdoors to reduce stress and improve mood.',
@@ -709,7 +709,7 @@ class _RelaxPageState extends State<RelaxPage> {
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
-                icon: Icons.music_note,
+                icon: FontAwesomeIcons.music,
                 title: 'Listen to Calming Music',
                 description:
                     'Soothing sounds can help reduce anxiety and promote relaxation.',
@@ -717,7 +717,7 @@ class _RelaxPageState extends State<RelaxPage> {
               ),
               Divider(height: 1, color: Theme.of(context).dividerColor),
               _buildTipItem(
-                icon: Icons.self_improvement,
+                icon: FontAwesomeIcons.spa,
                 title: 'Practice Gratitude',
                 description:
                     'Take time each day to reflect on things you\'re grateful for.',

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
@@ -39,10 +39,9 @@ class _SettingsPageState extends State<SettingsPage> {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
-            color: AppColors.textPrimary,
-            size: 20,
+          icon: const FaIcon(
+            FontAwesomeIcons.arrowLeft,
+            size: 18,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -95,7 +94,7 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         children: [
           _buildSettingsTile(
-            icon: Icons.person_outline,
+            icon: FontAwesomeIcons.user,
             title: 'Profile Information',
             subtitle: 'Update your personal details',
             onTap: () {
@@ -108,7 +107,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(),
 
           _buildSettingsTile(
-            icon: Icons.email_outlined,
+            icon: FontAwesomeIcons.envelope,
             title: 'Email Preferences',
             subtitle: 'Manage email notifications',
             onTap: () {
@@ -119,7 +118,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(),
 
           _buildSettingsTile(
-            icon: Icons.lock_outline,
+            icon: FontAwesomeIcons.lock,
             title: 'Change Password',
             subtitle: 'Update your account password',
             onTap: () {
@@ -141,7 +140,7 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         children: [
           _buildSwitchTile(
-            icon: Icons.notifications_outlined,
+            icon: FontAwesomeIcons.bell,
             title: 'Push Notifications',
             subtitle: 'Receive app notifications',
             value: _notificationsEnabled,
@@ -155,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(),
 
           _buildSwitchTile(
-            icon: Icons.dark_mode_outlined,
+            icon: FontAwesomeIcons.moon,
             title: 'Dark Mode',
             subtitle: 'Enable dark theme',
             value: _darkModeEnabled,
@@ -172,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(),
 
           _buildSwitchTile(
-            icon: Icons.fingerprint_outlined,
+            icon: FontAwesomeIcons.fingerprint,
             title: 'Biometric Login',
             subtitle: 'Use fingerprint or face ID',
             value: _biometricEnabled,
@@ -198,7 +197,7 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         children: [
           _buildSettingsTile(
-            icon: Icons.restart_alt,
+            icon: FontAwesomeIcons.rotateRight,
             title: 'Reset App',
             subtitle: 'Clear local data and sign out',
             onTap: _handleResetApp,
@@ -208,7 +207,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(),
 
           _buildSettingsTile(
-            icon: Icons.delete_outline,
+            icon: FontAwesomeIcons.trashCan,
             title: 'Clear Cache',
             subtitle: 'Clear app cache and temporary files',
             onTap: _handleClearCache,
@@ -218,7 +217,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _buildDivider(),
 
           _buildSettingsTile(
-            icon: Icons.logout_outlined,
+            icon: FontAwesomeIcons.rightFromBracket,
             title: 'Log Out',
             subtitle: 'Sign out of your account',
             onTap: _handleLogout,
@@ -259,7 +258,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       trailing: onTap != null
-          ? Icon(Icons.chevron_right, color: AppColors.textLight, size: 20)
+          ? const FaIcon(FontAwesomeIcons.chevronRight, color: AppColors.textLight, size: 18)
           : null,
       onTap: onTap,
     );

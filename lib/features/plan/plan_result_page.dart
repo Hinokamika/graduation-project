@@ -6,7 +6,7 @@ import 'package:final_project/services/plan_service.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PlanResultPage extends StatefulWidget {
@@ -33,8 +33,8 @@ class _PlanResultPageState extends State<PlanResultPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: AppColors.getTextPrimary(context),
           ),
           onPressed: () => Navigator.of(context).pop(),
@@ -168,10 +168,10 @@ class _PlanResultPageState extends State<PlanResultPage> {
                   color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  CupertinoIcons.doc_text,
+                child: const FaIcon(
+                  FontAwesomeIcons.fileLines,
                   color: AppColors.primary,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 12),
@@ -217,10 +217,10 @@ class _PlanResultPageState extends State<PlanResultPage> {
                   color: AppColors.heartRate.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  CupertinoIcons.heart,
+                child: const FaIcon(
+                  FontAwesomeIcons.heart,
                   color: AppColors.heartRate,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 12),
@@ -240,7 +240,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
             _buildInfoRow(
               'BMI',
               '$bmiValue (${bmiCategory ?? 'Unknown'})',
-              CupertinoIcons.person,
+              FontAwesomeIcons.user,
             ),
             if (bmiAnalysis != null) ...[
               const SizedBox(height: 12),
@@ -323,7 +323,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
               _buildInfoRow(
                 'Daily Hydration',
                 '${macros['hydration_l_min']}L minimum',
-                CupertinoIcons.drop,
+                FontAwesomeIcons.droplet,
               ),
             ],
           ],
@@ -348,10 +348,10 @@ class _PlanResultPageState extends State<PlanResultPage> {
                   color: AppColors.steps.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  CupertinoIcons.calendar,
+                child: const FaIcon(
+                  FontAwesomeIcons.calendar,
                   color: AppColors.steps,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 12),
@@ -405,10 +405,10 @@ class _PlanResultPageState extends State<PlanResultPage> {
                   color: AppColors.wellness.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  CupertinoIcons.shopping_cart,
+                child: const FaIcon(
+                  FontAwesomeIcons.cartShopping,
                   color: AppColors.wellness,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 12),
@@ -471,10 +471,10 @@ class _PlanResultPageState extends State<PlanResultPage> {
                   color: AppColors.sleep.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  CupertinoIcons.moon,
+                child: const FaIcon(
+                  FontAwesomeIcons.moon,
                   color: AppColors.sleep,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 12),
@@ -493,7 +493,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
             _buildInfoRow(
               'Sleep',
               lifestyle['sleep'].toString(),
-              CupertinoIcons.moon,
+              FontAwesomeIcons.moon,
             ),
 
           if (lifestyle['recovery'] != null) ...[
@@ -501,7 +501,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
             _buildInfoRow(
               'Recovery',
               lifestyle['recovery'].toString(),
-              CupertinoIcons.heart,
+              FontAwesomeIcons.heart,
             ),
           ],
 
@@ -510,7 +510,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
             _buildInfoRow(
               'Activity',
               lifestyle['steps_or_activity'].toString(),
-              CupertinoIcons.person_2,
+              FontAwesomeIcons.userGroup,
             ),
           ],
         ],
@@ -534,10 +534,10 @@ class _PlanResultPageState extends State<PlanResultPage> {
                   color: AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  CupertinoIcons.exclamationmark_triangle,
+                child: const FaIcon(
+                  FontAwesomeIcons.triangleExclamation,
                   color: AppColors.warning,
-                  size: 20,
+                  size: 18,
                 ),
               ),
               const SizedBox(width: 12),
@@ -588,7 +588,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
             child: EnhancedButton(
               text: _saving ? 'Saving...' : 'Save Plan',
               onPressed: _saving ? null : _onSave,
-              icon: CupertinoIcons.checkmark,
+              icon: FontAwesomeIcons.check,
               isLoading: _saving,
             ),
           ),

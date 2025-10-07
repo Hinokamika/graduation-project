@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
@@ -7,6 +7,7 @@ import 'package:final_project/services/auth_service.dart';
 import 'package:final_project/services/user_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'reset_password_page.dart';
+import 'package:final_project/features/auth/signup_page.dart';
 
 class LoginPage extends StatefulWidget {
   final bool returnOnSuccess;
@@ -88,10 +89,10 @@ class _LoginPageState extends State<LoginPage> {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: Theme.of(context).colorScheme.onSurface,
-            size: 20,
+            size: 18,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -124,8 +125,8 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Enter your email address',
                   hintStyle: AppTextStyles.hint,
                   // Use themed fill from InputDecorationTheme
-                  prefixIcon: Icon(
-                    Icons.email_outlined,
+                  prefixIcon: const FaIcon(
+                    FontAwesomeIcons.envelope,
                     color: AppColors.textLight,
                   ),
                   border: OutlineInputBorder(
@@ -172,8 +173,8 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Enter your password',
                   hintStyle: AppTextStyles.hint,
                   // Use themed fill from InputDecorationTheme
-                  prefixIcon: Icon(
-                    Icons.lock_outlined,
+                  prefixIcon: const FaIcon(
+                    FontAwesomeIcons.lock,
                     color: AppColors.textLight,
                   ),
                   border: OutlineInputBorder(
@@ -282,7 +283,13 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pushNamed('/signup');
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => SignUpPage(
+                              returnToPreviousOnSuccess: widget.returnOnSuccess,
+                            ),
+                          ),
+                        );
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.accent,

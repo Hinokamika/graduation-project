@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/user_service.dart';
@@ -49,10 +49,10 @@ class IntroPage extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.info_outline,
+                        const FaIcon(
+                          FontAwesomeIcons.circleInfo,
                           color: AppColors.info,
-                          size: 18,
+                          size: 16,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -94,10 +94,10 @@ class IntroPage extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.assignment_outlined,
+                        const FaIcon(
+                          FontAwesomeIcons.clipboard,
                           color: AppColors.info,
-                          size: 18,
+                          size: 16,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -136,9 +136,9 @@ class IntroPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(
-                  CupertinoIcons.heart_fill,
-                  size: 44,
+                child: const FaIcon(
+                  FontAwesomeIcons.solidHeart,
+                  size: 40,
                   color: AppColors.accent,
                 ),
               ),

@@ -5,9 +5,11 @@ import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/auth_service.dart';
 import 'package:final_project/services/user_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+  final bool returnToPreviousOnSuccess;
+  const SignUpPage({super.key, this.returnToPreviousOnSuccess = false});
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -66,8 +68,13 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
         );
 
-        // Navigate to login page on successful signup
-        Navigator.of(context).pushReplacementNamed('/login');
+        // Navigate back to login with proper return behavior
+        if (widget.returnToPreviousOnSuccess) {
+          // Return to the existing LoginPage below us
+          Navigator.of(context).pop();
+        } else {
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
       }
     } on AuthException catch (e) {
       if (mounted) {
@@ -103,10 +110,10 @@ class _SignUpPageState extends State<SignUpPage> {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: Theme.of(context).colorScheme.onSurface,
-            size: 20,
+            size: 18,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -123,7 +130,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Full Name',
-                  prefixIcon: Icon(Icons.person_outlined),
+                  prefixIcon: FaIcon(FontAwesomeIcons.user),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -150,7 +157,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined),
+                  prefixIcon: FaIcon(FontAwesomeIcons.envelope),
                 ),
                 validator: (value) {
                   final v = (value ?? '').trim();
@@ -167,7 +174,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock_outlined),
+                  prefixIcon: FaIcon(FontAwesomeIcons.lock),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -185,7 +192,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
-                  prefixIcon: Icon(Icons.lock_outlined),
+                  prefixIcon: FaIcon(FontAwesomeIcons.lock),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -214,7 +221,12 @@ class _SignUpPageState extends State<SignUpPage> {
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pushNamed('/login');
+                  if (widget.returnToPreviousOnSuccess) {
+                    // If we came from a return-on-success login, just go back to it
+                    Navigator.of(context).pop();
+                  } else {
+                    Navigator.of(context).pushNamed('/login');
+                  }
                 },
                 child: const Text(
                   'Already have an account? Login',

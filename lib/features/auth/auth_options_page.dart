@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/user_service.dart';
@@ -18,10 +18,10 @@ class AuthOptionsPage extends StatelessWidget {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: Theme.of(context).colorScheme.onSurface,
-            size: 20,
+            size: 18,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -53,10 +53,10 @@ class AuthOptionsPage extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.check_circle_outline,
+                        const FaIcon(
+                          FontAwesomeIcons.circleCheck,
                           color: AppColors.info,
-                          size: 18,
+                          size: 16,
                         ),
                         const SizedBox(width: 8),
                         Expanded(

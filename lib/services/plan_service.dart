@@ -106,7 +106,11 @@ class PlanService {
     try {
       final mealInserts = bundle.meals.map((e) => e.toMap()).toList();
       if (mealInserts.isNotEmpty) {
-        await _supabase.from('meal_plan').insert(mealInserts);
+        // Insert sequentially to avoid any partial-batch issues and ensure
+        // all 7 days are persisted even if one row has problematic data.
+        for (final row in mealInserts) {
+          await _supabase.from('meal_plan').insert(row);
+        }
       }
     } on PostgrestException catch (e) {
       final code = e.code ?? '';

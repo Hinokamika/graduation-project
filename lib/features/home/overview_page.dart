@@ -1,36 +1,186 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:final_project/utils/app_colors.dart';
-import 'package:final_project/utils/text_styles.dart';
-import 'package:final_project/components/enhanced_card.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../utils/app_colors.dart';
+import '../../utils/text_styles.dart';
+import '../../components/enhanced_card.dart';
+import '../../services/user_service.dart';
+import 'providers/health_data_provider.dart';
+import 'widgets/health_summary_grid.dart';
+import 'widgets/target_edit_modal.dart';
+import 'models/health_metrics.dart';
 
-class OverviewPage extends StatelessWidget {
+class OverviewPage extends StatefulWidget {
   const OverviewPage({super.key});
+
+  @override
+  State<OverviewPage> createState() => _OverviewPageState();
+}
+
+class _OverviewPageState extends State<OverviewPage>
+    with SingleTickerProviderStateMixin {
+  late final HealthDataProvider _provider;
+  late AnimationController _animationController;
+  String? _displayName;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider = HealthDataProvider();
+    _provider.addListener(_onProviderChanged);
+
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    // Start animation when data loads
+    _animationController.forward();
+
+    // Load user name from Supabase user_identity (via UserService)
+    _loadUserName();
+  }
+
+  @override
+  void dispose() {
+    _provider.removeListener(_onProviderChanged);
+    _provider.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onProviderChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final profile = await UserService().getUserProfile();
+      final data = profile?['survey_data'];
+      if (data is Map && mounted) {
+        final name = data['name'];
+        if (name is String && name.trim().isNotEmpty) {
+          setState(() => _displayName = name.trim());
+        }
+      }
+    } catch (_) {
+      // Ignore; fall back to default greeting
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SingleChildScrollView(
+      body: Builder(
+        builder: (context) {
+          if (_provider.isLoading && _provider.overview == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (_provider.error != null && _provider.overview == null) {
+            return _buildErrorState(context, _provider);
+          }
+
+          if (_provider.overview == null) {
+            return _buildEmptyState(context);
+          }
+
+          return RefreshIndicator(
+            onRefresh: _provider.refreshData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 600
+                    ? 32.0
+                    : 16.0,
+                vertical: 16.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  _buildWelcomeSection(context),
+                  const SizedBox(height: 24),
+                  _buildTodaySummary(context, _provider),
+                  const SizedBox(height: 24),
+                  _buildHealthMetrics(context, _provider),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, HealthDataProvider provider) {
+    return Center(
+      child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Welcome Section
-            _buildWelcomeSection(context),
-            const SizedBox(height: 32),
+            const FaIcon(
+              FontAwesomeIcons.triangleExclamation,
+              size: 56,
+              color: AppColors.warning,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error Loading Health Data',
+              style: AppTextStyles.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _provider.error!,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.getTextSecondary(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _provider.refreshData,
+              icon: const FaIcon(FontAwesomeIcons.arrowsRotate, size: 16),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Today's Summary
-            _buildTodaySummary(context),
-            const SizedBox(height: 32),
-
-            // Health Metrics
-            _buildHealthMetrics(context),
-            const SizedBox(height: 32),
-
-            // Recent Activities
-            _buildRecentActivities(context),
-            const SizedBox(height: 32),
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FaIcon(
+              FontAwesomeIcons.heart,
+              size: 56,
+              color: AppColors.primary.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Welcome to Health Overview',
+              style: AppTextStyles.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Set up your health targets to get started',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.getTextSecondary(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -38,210 +188,207 @@ class OverviewPage extends StatelessWidget {
   }
 
   Widget _buildWelcomeSection(BuildContext context) {
+    final now = DateTime.now();
+    final hour = now.hour;
+    String greeting;
+    IconData greetingIcon;
+    Color greetingColor;
+
+    if (hour < 12) {
+      greeting = 'Good Morning';
+      greetingIcon = FontAwesomeIcons.sun;
+      greetingColor = AppColors.warning;
+    } else if (hour < 17) {
+      greeting = 'Good Afternoon';
+      greetingIcon = FontAwesomeIcons.sun;
+      greetingColor = AppColors.success;
+    } else {
+      greeting = 'Good Evening';
+      greetingIcon = FontAwesomeIcons.moon;
+      greetingColor = AppColors.sleep;
+    }
+
     return EnhancedCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Good Morning,',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.getTextSecondary(context),
-            ),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              greetingColor.withValues(alpha: 0.1),
+              greetingColor.withValues(alpha: 0.05),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Sarah Johnson',
-            style: AppTextStyles.displayMedium.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.success.withOpacity(0.1),
-                  AppColors.success.withOpacity(0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(
-                color: AppColors.success.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.success,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    CupertinoIcons.chart_bar_fill,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 12),
+                Icon(greetingIcon, color: greetingColor, size: 24),
+                const SizedBox(width: 8),
                 Text(
-                  'Great Progress!',
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w600,
+                  greeting,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: greetingColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              _displayName ?? 'Health Champion!',
+              style: AppTextStyles.displayMedium.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTodaySummary(BuildContext context) {
+  Widget _buildTodaySummary(BuildContext context, HealthDataProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Today's Summary", style: AppTextStyles.subtitle),
-        const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(
-              child: _buildSummaryCard(
-                context,
-                title: 'Steps',
-                value: '8,432',
-                target: '10,000',
-                icon: CupertinoIcons.person_2,
-                color: AppColors.accent,
-                progress: 0.84,
-              ),
+            const FaIcon(
+              FontAwesomeIcons.chartColumn,
+              color: AppColors.primary,
+              size: 18,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildSummaryCard(
-                context,
-                title: 'Calories',
-                value: '1,850',
-                target: '2,200',
-                icon: Icons.local_fire_department,
-                color: AppColors.warning,
-                progress: 0.84,
+            const SizedBox(width: 8),
+            Text("Today's Progress", style: AppTextStyles.subtitle),
+            const Spacer(),
+            if (_provider.isLoading)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.info,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Syncing...',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.info,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.circleCheck,
+                      color: AppColors.success,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Live',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildSummaryCard(
-                context,
-                title: 'Water',
-                value: '1.8L',
-                target: '2.5L',
-                icon: Icons.water_drop,
-                color: AppColors.healthPrimary,
-                progress: 0.72,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildSummaryCard(
-                context,
-                title: 'Sleep',
-                value: '7.5h',
-                target: '8h',
-                icon: Icons.bedtime,
-                color: AppColors.info,
-                progress: 0.94,
-              ),
-            ),
-          ],
+
+        HealthSummaryGrid(
+          overview: _provider.overview!,
+          onEditTarget: (type) =>
+              _showTargetEditModal(context, _provider, type),
         ),
+
+        const SizedBox(height: 20),
+        _buildActionButtons(context, _provider),
       ],
     );
   }
 
-  Widget _buildSummaryCard(
-    BuildContext context, {
-    required String title,
-    required String value,
-    required String target,
-    required IconData icon,
-    required Color color,
-    required double progress,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Theme.of(context).brightness == Brightness.dark
-            ? Border.all(color: Theme.of(context).dividerColor)
-            : null,
-        boxShadow: Theme.of(context).brightness == Brightness.dark
-            ? []
-            : [
-                BoxShadow(
-                  color: AppColors.divider.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.7),
-                ),
+  Widget _buildActionButtons(
+    BuildContext context,
+    HealthDataProvider provider,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider, width: 1),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => Navigator.of(context).pushNamed('/habit_history'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const FaIcon(
+                    FontAwesomeIcons.chartColumn,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Show History',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTextStyles.heading3.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Target: $target',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Theme.of(context).dividerColor,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildHealthMetrics(BuildContext context) {
+  Widget _buildHealthMetrics(
+    BuildContext context,
+    HealthDataProvider provider,
+  ) {
+    final overview = _provider.overview!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -253,14 +400,18 @@ class OverviewPage extends StatelessWidget {
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Theme.of(context).brightness == Brightness.dark
-                ? Border.all(color: Theme.of(context).dividerColor)
+                ? Border.all(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
+                  )
                 : null,
             boxShadow: Theme.of(context).brightness == Brightness.dark
                 ? []
                 : [
                     BoxShadow(
-                      color: AppColors.divider.withValues(alpha: 0.3),
-                      blurRadius: 10,
+                      color: AppColors.divider.withValues(alpha: 0.1),
+                      blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -270,37 +421,34 @@ class OverviewPage extends StatelessWidget {
               _buildMetricRow(
                 context,
                 label: 'Heart Rate',
-                value: '72 bpm',
+                value: overview.metrics.heartRate?.toStringAsFixed(0) ?? '72',
+                unit: 'bpm',
                 status: 'Normal',
                 statusColor: AppColors.success,
-                icon: Icons.favorite,
               ),
               const SizedBox(height: 16),
               _buildMetricRow(
                 context,
-                label: 'Blood Pressure',
-                value: '120/80',
-                status: 'Optimal',
-                statusColor: AppColors.success,
-                icon: Icons.monitor_heart,
-              ),
-              const SizedBox(height: 16),
-              _buildMetricRow(
-                context,
-                label: 'BMI',
-                value: '22.4',
-                status: 'Healthy',
-                statusColor: AppColors.success,
-                icon: Icons.calculate,
-              ),
-              const SizedBox(height: 16),
-              _buildMetricRow(
-                context,
-                label: 'Stress Level',
-                value: 'Low',
+                label: 'Standing Time',
+                value: overview.metrics.standingMinutes != null
+                    ? (overview.metrics.standingMinutes! / 60).toStringAsFixed(
+                        1,
+                      )
+                    : '0.8',
+                unit: 'hrs',
                 status: 'Good',
-                statusColor: AppColors.wellness,
-                icon: Icons.psychology,
+                statusColor: AppColors.success,
+              ),
+              const SizedBox(height: 16),
+              _buildMetricRow(
+                context,
+                label: 'Last Updated',
+                value: _formatLastUpdated(overview.metrics.lastUpdated),
+                unit: '',
+                status: _provider.hasHealthPermissions ? 'HealthKit' : 'Manual',
+                statusColor: _provider.hasHealthPermissions
+                    ? AppColors.success
+                    : AppColors.warning,
               ),
             ],
           ),
@@ -313,14 +461,12 @@ class OverviewPage extends StatelessWidget {
     BuildContext context, {
     required String label,
     required String value,
+    required String unit,
     required String status,
     required Color statusColor,
-    required IconData icon,
   }) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.textSecondary, size: 20),
-        const SizedBox(width: 12),
         Expanded(
           child: Text(
             label,
@@ -330,7 +476,7 @@ class OverviewPage extends StatelessWidget {
           ),
         ),
         Text(
-          value,
+          '$value $unit',
           style: AppTextStyles.bodyMedium.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
             fontWeight: FontWeight.w600,
@@ -355,102 +501,55 @@ class OverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivities(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Recent Activities', style: AppTextStyles.subtitle),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Theme.of(context).brightness == Brightness.dark
-                ? Border.all(color: Theme.of(context).dividerColor)
-                : null,
-            boxShadow: Theme.of(context).brightness == Brightness.dark
-                ? []
-                : [
-                    BoxShadow(
-                      color: AppColors.divider.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          child: Column(
-            children: [
-              _buildActivityItem(
-                context,
-                icon: CupertinoIcons.sportscourt,
-                title: 'Morning Yoga',
-                time: '30 min ago',
-                calories: '120 cal',
-                color: AppColors.accent,
-              ),
-              Divider(height: 1, color: Theme.of(context).dividerColor),
-              _buildActivityItem(
-                context,
-                icon: Icons.restaurant,
-                title: 'Healthy Breakfast',
-                time: '2 hours ago',
-                calories: '350 cal',
-                color: AppColors.success,
-              ),
-              Divider(height: 1, color: Theme.of(context).dividerColor),
-              _buildActivityItem(
-                context,
-                icon: Icons.directions_walk,
-                title: 'Evening Walk',
-                time: 'Yesterday',
-                calories: '180 cal',
-                color: AppColors.healthPrimary,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  String _formatLastUpdated(DateTime lastUpdated) {
+    final now = DateTime.now();
+    final diff = now.difference(lastUpdated);
+
+    if (diff.inMinutes < 1) {
+      return 'Just now';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    } else {
+      return '${diff.inDays}d ago';
+    }
   }
 
-  Widget _buildActivityItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String time,
-    required String calories,
-    required Color color,
-  }) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: color, size: 20),
+  Future<void> _showTargetEditModal(
+    BuildContext context,
+    HealthDataProvider provider,
+    HealthMetricType type,
+  ) async {
+    final overview = provider.overview!;
+    num currentValue;
+
+    switch (type) {
+      case HealthMetricType.steps:
+        currentValue = overview.targets.stepsTarget;
+        break;
+      case HealthMetricType.calories:
+        currentValue = overview.targets.caloriesTarget;
+        break;
+      case HealthMetricType.standingTime:
+        currentValue = overview.targets.standingTimeTargetMin;
+        break;
+      case HealthMetricType.sleep:
+        currentValue = overview.targets.sleepTargetH;
+        break;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      title: Text(
-        title,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-      subtitle: Text(
-        time,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-        ),
-      ),
-      trailing: Text(
-        calories,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
-        ),
+      builder: (_) => TargetEditModal(
+        type: type,
+        currentValue: currentValue,
+        onSave: (value) => provider.updateTarget(type, value),
       ),
     );
   }
-
 }

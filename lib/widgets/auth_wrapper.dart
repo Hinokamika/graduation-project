@@ -11,6 +11,11 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<AuthState>(
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          // If session recovery fails (e.g., invalid refresh token),
+          // fall back to unauthenticated flow instead of crashing.
+          return const IntroPage();
+        }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),

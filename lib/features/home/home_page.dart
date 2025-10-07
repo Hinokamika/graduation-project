@@ -1,7 +1,7 @@
 import 'package:final_project/config/theme_controller.dart';
 import 'package:final_project/features/chat/chat_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/features/home/overview_page.dart';
@@ -103,10 +103,9 @@ class _HomePageState extends State<HomePage> {
             children: [
               // Settings Button
               IconButton(
-                icon: Icon(
-                  CupertinoIcons.gear,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: 24,
+                icon: const FaIcon(
+                  FontAwesomeIcons.gear,
+                  size: 20,
                 ),
                 onPressed: () {
                   Navigator.of(context).push(
@@ -119,11 +118,12 @@ class _HomePageState extends State<HomePage> {
               ),
               // Theme Toggle Button
               IconButton(
-                icon: Icon(
+                icon: FaIcon(
                   Theme.of(context).brightness == Brightness.dark
-                      ? CupertinoIcons.sun_max
-                      : CupertinoIcons.moon,
+                      ? FontAwesomeIcons.sun
+                      : FontAwesomeIcons.moon,
                   color: AppColors.getTextPrimary(context),
+                  size: 22,
                 ),
                 onPressed: () {
                   ThemeController.instance.toggle();
@@ -131,16 +131,13 @@ class _HomePageState extends State<HomePage> {
                 tooltip: 'Toggle Theme',
               ),
 
-              const SizedBox(width: 8),
-
               // Notifications
               Stack(
                 children: [
                   IconButton(
-                    icon: Icon(
-                      CupertinoIcons.bell,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      size: 24,
+                    icon: const FaIcon(
+                      FontAwesomeIcons.bell,
+                      size: 22,
                     ),
                     onPressed: () {
                       // Handle notifications
@@ -188,10 +185,13 @@ class _HomePageState extends State<HomePage> {
                       width: 1,
                     ),
                   ),
-                  child: Icon(
-                    CupertinoIcons.person,
-                    color: AppColors.healthPrimary,
-                    size: 20,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: const FaIcon(
+                      FontAwesomeIcons.user,
+                      color: AppColors.healthPrimary,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -245,8 +245,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             Expanded(
               child: _buildNavItem(
-                icon: CupertinoIcons.square_grid_2x2,
-                selectedIcon: CupertinoIcons.square_grid_2x2_fill,
+                icon: FontAwesomeIcons.tableCellsLarge,
+                selectedIcon: FontAwesomeIcons.tableCellsLarge,
                 label: overviewLabel,
                 index: 0,
                 showLabel: showLabels,
@@ -255,8 +255,8 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: _buildNavItem(
-                icon: CupertinoIcons.sportscourt,
-                selectedIcon: CupertinoIcons.sportscourt_fill,
+                icon: FontAwesomeIcons.dumbbell,
+                selectedIcon: FontAwesomeIcons.dumbbell,
                 label: workoutLabel,
                 index: 1,
                 showLabel: showLabels,
@@ -265,8 +265,8 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: _buildNavItem(
-                icon: CupertinoIcons.chat_bubble,
-                selectedIcon: CupertinoIcons.chat_bubble_fill,
+                icon: FontAwesomeIcons.commentDots,
+                selectedIcon: FontAwesomeIcons.commentDots,
                 label: 'Chat',
                 index: 2,
                 showLabel: showLabels,
@@ -275,8 +275,8 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: _buildNavItem(
-                icon: CupertinoIcons.heart,
-                selectedIcon: CupertinoIcons.heart_fill,
+                icon: FontAwesomeIcons.lemon,
+                selectedIcon: FontAwesomeIcons.lemon,
                 label: 'Meal',
                 index: 3,
                 showLabel: showLabels,
@@ -285,8 +285,8 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: _buildNavItem(
-                icon: CupertinoIcons.leaf_arrow_circlepath,
-                selectedIcon: CupertinoIcons.leaf_arrow_circlepath,
+                icon: FontAwesomeIcons.leaf,
+                selectedIcon: FontAwesomeIcons.leaf,
                 label: 'Relax',
                 index: 4,
                 showLabel: showLabels,
@@ -333,7 +333,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.max,
             children: [
-              Icon(
+              FaIcon(
                 isSelected ? selectedIcon : icon,
                 color: isSelected ? AppColors.accent : AppColors.textLight,
                 size: iconSize,

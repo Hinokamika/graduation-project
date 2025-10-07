@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/api/healthcare_mcp_api.dart';
 import 'package:final_project/features/plan/plan_result_page.dart';
 
@@ -99,7 +100,7 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                    const FaIcon(FontAwesomeIcons.circleExclamation, color: Colors.red, size: 44),
                     const SizedBox(height: 12),
                     Text(
                       _error!,
@@ -117,4 +118,3 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
     );
   }
 }
-

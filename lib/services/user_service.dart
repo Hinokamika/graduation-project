@@ -17,6 +17,15 @@ class UserService {
       'nutrition_goal'; // 'lose' | 'maintain' | 'gain'
   static const String _nutritionGoalDeltaKey =
       'nutrition_goal_delta'; // 10 | 15 | 20
+  // Today's Summary targets
+  static const String _stepsTargetKey = 'steps_target'; // int
+  static const String _caloriesTargetKey = 'calories_target'; // int
+  static const String _standingTimeTargetMinKey =
+      'standing_time_target_min'; // int minutes
+  static const String _sleepTargetHoursKey =
+      'sleep_target_hours'; // double hours
+  static const String _applyTargetsToTodayKey =
+      'apply_targets_to_today'; // bool
 
   Box? _userBox;
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -240,8 +249,7 @@ class UserService {
           'weight': (surveyData['weight'] as num?)?.toDouble(),
         if (surveyData['activity_level'] != null)
           'activity_level': surveyData['activity_level'],
-        if (surveyData['health_conditions'] != null)
-          'health_conditions': surveyData['health_conditions'],
+        // 'health_conditions' column no longer used in user_identity
       };
 
       // Insert or update on Supabase; if user exists, include identifiers
@@ -316,8 +324,7 @@ class UserService {
         if (sd['weight'] != null) 'weight': (sd['weight'] as num?)?.toDouble(),
         if (sd['activity_level'] != null)
           'activity_level': sd['activity_level'],
-        if (sd['health_conditions'] != null)
-          'health_conditions': sd['health_conditions'],
+        // 'health_conditions' column no longer used in user_identity
         // identifiers
         'user_id': user.id,
         if (user.email?.isNotEmpty == true) 'email': user.email,
@@ -374,7 +381,7 @@ class UserService {
         final resp = await _supabase
             .from('user_identity')
             .select(
-              'id,user_name,age,gender,height,weight,activity_level,health_conditions,email',
+              'id,user_name,age,gender,height,weight,activity_level,email',
             )
             .eq('user_id', uid)
             .maybeSingle();
@@ -392,7 +399,7 @@ class UserService {
           final resp = await _supabase
               .from('user_identity')
               .select(
-                'id,user_name,age,gender,height,weight,activity_level,health_conditions,email',
+                'id,user_name,age,gender,height,weight,activity_level,email',
               )
               .eq('id', localId)
               .maybeSingle();
@@ -410,7 +417,7 @@ class UserService {
           'height': row['height'],
           'weight': row['weight'],
           'activity_level': row['activity_level'],
-          'health_conditions': row['health_conditions'],
+          // 'health_conditions' not selected from user_identity
         };
         // Cache locally for faster subsequent reads
         await box.put('survey_data', survey);
@@ -466,6 +473,72 @@ class UserService {
   Future<void> setNutritionGoalDelta(int percent) async {
     final box = await _getUserBox;
     await box.put(_nutritionGoalDeltaKey, percent);
+  }
+
+  // Daily targets: steps, calories, water, sleep
+  Future<int> getStepsTarget() async {
+    final box = await _getUserBox;
+    final v = box.get(_stepsTargetKey);
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return 10000; // default steps
+  }
+
+  Future<void> setStepsTarget(int steps) async {
+    final box = await _getUserBox;
+    await box.put(_stepsTargetKey, steps);
+  }
+
+  Future<int> getCaloriesTarget() async {
+    final box = await _getUserBox;
+    final v = box.get(_caloriesTargetKey);
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return 2200; // default kcal
+  }
+
+  Future<void> setCaloriesTarget(int kcal) async {
+    final box = await _getUserBox;
+    await box.put(_caloriesTargetKey, kcal);
+  }
+
+  Future<int> getStandingTimeTargetMinutes() async {
+    final box = await _getUserBox;
+    final v = box.get(_standingTimeTargetMinKey);
+    if (v is int) return v;
+    if (v is num) return v.round();
+    return 720; // default 12 hours (720 minutes) standing goal - Apple Watch standard
+  }
+
+  Future<void> setStandingTimeTargetMinutes(int minutes) async {
+    final box = await _getUserBox;
+    await box.put(_standingTimeTargetMinKey, minutes);
+  }
+
+  Future<double> getSleepTargetHours() async {
+    final box = await _getUserBox;
+    final v = box.get(_sleepTargetHoursKey);
+    if (v is double) return v;
+    if (v is num) return v.toDouble();
+    return 8.0; // default hours
+  }
+
+  Future<void> setSleepTargetHours(double hours) async {
+    final box = await _getUserBox;
+    await box.put(_sleepTargetHoursKey, hours);
+  }
+
+  // Preference: apply targets to today's record automatically
+  Future<bool> getApplyTargetsToToday() async {
+    final box = await _getUserBox;
+    final v = box.get(_applyTargetsToTodayKey);
+    if (v is bool) return v;
+    return false;
+  }
+
+  Future<void> setApplyTargetsToToday(bool enabled) async {
+    final box = await _getUserBox;
+    await box.put(_applyTargetsToTodayKey, enabled);
   }
 
   // Check if user profile exists in Supabase

@@ -3,7 +3,7 @@ import 'package:final_project/components/buildTextField.dart';
 import 'package:final_project/components/enhanced_button.dart';
 import 'package:final_project/components/enhanced_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
@@ -48,10 +48,10 @@ class _SurveyPageState extends State<SurveyPage> {
             ? SystemUiOverlayStyle.light
             : SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(
-            CupertinoIcons.back,
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
             color: AppColors.getTextPrimary(context),
-            size: 22,
+            size: 20,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -86,10 +86,10 @@ class _SurveyPageState extends State<SurveyPage> {
                             color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.person_outline,
+                          child: const FaIcon(
+                            FontAwesomeIcons.user,
                             color: AppColors.primary,
-                            size: 24,
+                            size: 22,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -126,7 +126,7 @@ class _SurveyPageState extends State<SurveyPage> {
                     buildTextField(
                       controller: _nameController,
                       label: 'Full Name',
-                      icon: Icons.person_outline,
+                      icon: FontAwesomeIcons.user,
                       validator: (value) {
                         if (value?.isEmpty ?? true)
                           return 'Please enter your name';
@@ -141,7 +141,7 @@ class _SurveyPageState extends State<SurveyPage> {
                           child: buildTextField(
                             controller: _ageController,
                             label: 'Age',
-                            icon: Icons.cake_outlined,
+                            icon: FontAwesomeIcons.cakeCandles,
                             keyboardType: TextInputType.number,
                             validator: (value) {
                               if (value?.isEmpty ?? true) return 'Required';
@@ -158,7 +158,7 @@ class _SurveyPageState extends State<SurveyPage> {
                           child: buildDropdown(
                             value: _selectedGender,
                             label: 'Gender',
-                            icon: Icons.wc_outlined,
+                            icon: FontAwesomeIcons.venusMars,
                             items: [
                               'Male',
                               'Female',
@@ -190,7 +190,7 @@ class _SurveyPageState extends State<SurveyPage> {
                           child: buildTextField(
                             controller: _heightController,
                             label: 'Height (cm)',
-                            icon: Icons.height,
+                            icon: FontAwesomeIcons.rulerVertical,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -211,7 +211,7 @@ class _SurveyPageState extends State<SurveyPage> {
                           child: buildTextField(
                             controller: _weightController,
                             label: 'Weight (kg)',
-                            icon: Icons.monitor_weight_outlined,
+                            icon: FontAwesomeIcons.weightScale,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
@@ -234,7 +234,7 @@ class _SurveyPageState extends State<SurveyPage> {
                     buildDropdown(
                       value: _selectedActivityLevel,
                       label: 'Activity Level',
-                      icon: Icons.directions_run,
+                      icon: FontAwesomeIcons.personRunning,
                       items: _activityLevels,
                       onChanged: (value) =>
                           setState(() => _selectedActivityLevel = value),
@@ -244,7 +244,7 @@ class _SurveyPageState extends State<SurveyPage> {
                     buildDropdown(
                       value: _selectedDietType,
                       label: 'Diet Type',
-                      icon: Icons.restaurant_menu,
+                      icon: FontAwesomeIcons.utensils,
                       items: _dietTypes,
                       onChanged: (value) =>
                           setState(() => _selectedDietType = value),
@@ -259,7 +259,7 @@ class _SurveyPageState extends State<SurveyPage> {
                 text: 'Continue',
                 onPressed: _submitSurvey,
                 width: double.infinity,
-                icon: Icons.arrow_forward,
+                icon: FontAwesomeIcons.arrowRight,
               ),
               const SizedBox(height: 24),
             ],

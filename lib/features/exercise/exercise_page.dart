@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/health_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ExercisePage extends StatefulWidget {
   const ExercisePage({super.key});
@@ -122,10 +123,10 @@ class _ExercisePageState extends State<ExercisePage> {
                   color: AppColors.accent.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.fitness_center,
+                child: const FaIcon(
+                  FontAwesomeIcons.dumbbell,
                   color: AppColors.accent,
-                  size: 30,
+                  size: 26,
                 ),
               ),
             ],
@@ -344,7 +345,7 @@ class _ExercisePageState extends State<ExercisePage> {
             shape: BoxShape.circle,
           ),
           child: completed
-              ? Icon(Icons.check, color: Colors.white, size: 16)
+              ? const FaIcon(FontAwesomeIcons.check, color: Colors.white, size: 14)
               : null,
         ),
         const SizedBox(width: 12),
@@ -468,7 +469,7 @@ class _ExercisePageState extends State<ExercisePage> {
           children: [
             Expanded(
               child: _buildCategoryCard(
-                icon: Icons.directions_run,
+                icon: FontAwesomeIcons.personRunning,
                 title: 'Cardio',
                 color: AppColors.accent,
                 exercises: '12',
@@ -477,7 +478,7 @@ class _ExercisePageState extends State<ExercisePage> {
             const SizedBox(width: 16),
             Expanded(
               child: _buildCategoryCard(
-                icon: Icons.fitness_center,
+                icon: FontAwesomeIcons.dumbbell,
                 title: 'Strength',
                 color: AppColors.warning,
                 exercises: '18',
@@ -490,7 +491,7 @@ class _ExercisePageState extends State<ExercisePage> {
           children: [
             Expanded(
               child: _buildCategoryCard(
-                icon: Icons.self_improvement,
+                icon: FontAwesomeIcons.spa,
                 title: 'Yoga',
                 color: AppColors.healthPrimary,
                 exercises: '8',
@@ -499,7 +500,7 @@ class _ExercisePageState extends State<ExercisePage> {
             const SizedBox(width: 16),
             Expanded(
               child: _buildCategoryCard(
-                icon: Icons.sports,
+                icon: FontAwesomeIcons.football,
                 title: 'Sports',
                 color: AppColors.success,
                 exercises: '15',
@@ -636,7 +637,7 @@ class _ExercisePageState extends State<ExercisePage> {
           color: color.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(Icons.fitness_center, color: color, size: 20),
+        child: Icon(FontAwesomeIcons.dumbbell, color: color, size: 18),
       ),
       title: Text(
         title,
