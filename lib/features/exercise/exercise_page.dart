@@ -63,9 +63,6 @@ class _ExercisePageState extends State<ExercisePage> {
             // Exercise Categories
             _buildExerciseCategories(),
             const SizedBox(height: 32),
-
-            // Recent Workouts
-            _buildRecentWorkouts(),
           ],
         ),
       ),
@@ -123,10 +120,13 @@ class _ExercisePageState extends State<ExercisePage> {
                   color: AppColors.accent.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const FaIcon(
-                  FontAwesomeIcons.dumbbell,
-                  color: AppColors.accent,
-                  size: 26,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 17),
+                  child: const FaIcon(
+                    FontAwesomeIcons.dumbbell,
+                    color: AppColors.accent,
+                    size: 26,
+                  ),
                 ),
               ),
             ],
@@ -558,112 +558,6 @@ class _ExercisePageState extends State<ExercisePage> {
           const SizedBox(height: 4),
           Text(
             '$exercises exercises',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentWorkouts() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Recent Workouts', style: AppTextStyles.subtitle),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Theme.of(context).brightness == Brightness.dark
-                ? Border.all(color: Theme.of(context).dividerColor)
-                : null,
-            boxShadow: Theme.of(context).brightness == Brightness.dark
-                ? []
-                : [
-                    BoxShadow(
-                      color: AppColors.divider.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          child: Column(
-            children: [
-              _buildWorkoutItem(
-                title: 'Morning Run',
-                time: 'Today, 7:00 AM',
-                duration: '30 min',
-                calories: '280 cal',
-                color: AppColors.accent,
-              ),
-              Divider(height: 1, color: Theme.of(context).dividerColor),
-              _buildWorkoutItem(
-                title: 'Upper Body Strength',
-                time: 'Yesterday, 6:00 PM',
-                duration: '45 min',
-                calories: '320 cal',
-                color: AppColors.warning,
-              ),
-              Divider(height: 1, color: Theme.of(context).dividerColor),
-              _buildWorkoutItem(
-                title: 'Evening Yoga',
-                time: '2 days ago, 8:00 PM',
-                duration: '25 min',
-                calories: '120 cal',
-                color: AppColors.healthPrimary,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWorkoutItem({
-    required String title,
-    required String time,
-    required String duration,
-    required String calories,
-    required Color color,
-  }) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(FontAwesomeIcons.dumbbell, color: color, size: 18),
-      ),
-      title: Text(
-        title,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-      ),
-      subtitle: Text(
-        time,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-        ),
-      ),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            duration,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            calories,
             style: AppTextStyles.bodySmall.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
             ),
