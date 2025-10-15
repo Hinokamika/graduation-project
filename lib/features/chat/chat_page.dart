@@ -16,6 +16,7 @@ class _ChatPageState extends State<ChatPage> {
   final ChatService _chatService = ChatService();
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
   bool _sending = false;
   String? _selectedTag;
 
@@ -23,6 +24,7 @@ class _ChatPageState extends State<ChatPage> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -31,7 +33,13 @@ class _ChatPageState extends State<ChatPage> {
     if (text.isEmpty || _sending) return;
     setState(() => _sending = true);
     try {
-      await _chatService.sendMessage(text);
+      // Determine mode based on selected tag
+      String mode = 'meal'; // default mode
+      if (_selectedTag != null) {
+        mode = _selectedTag!.toLowerCase();
+      }
+
+      await _chatService.sendMessage(text, mode: mode);
       _controller.clear();
       await Future.delayed(const Duration(milliseconds: 50));
       if (mounted && _scrollController.hasClients) {
@@ -54,30 +62,212 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF8FAFC),
       resizeToAvoidBottomInset: true,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: () => FocusScope.of(context).unfocus(),
         child: Column(
           children: [
+            // Modern gradient header
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                ),
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  child: Row(
+                    children: [
+                      // Coach avatar
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: FaIcon(
+                            FontAwesomeIcons.robot,
+                            color: AppColors.accent,
+                            size: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Health Coach',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'AI-powered wellness assistant',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Clear conversation button
+                      IconButton(
+                        onPressed: () {
+                          _chatService.clearHistory();
+                        },
+                        icon: const Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.white,
+                        ),
+                        tooltip: 'Clear conversation',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
             // Messages list
             Expanded(
               child: StreamBuilder<List<Message>>(
                 stream: _chatService.getMessages(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
+                              ),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Loading conversation...',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: AppColors.error,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error: ${snapshot.error}',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.error,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   final data = snapshot.data ?? [];
                   if (data.isEmpty) {
                     return Center(
-                      child: Text(
-                        'Say hi to your coach',
-                        style: AppTextStyles.bodyMedium,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.accent.withValues(alpha: 0.1),
+                                  AppColors.accent.withValues(alpha: 0.05),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: Center(
+                              child: FaIcon(
+                                FontAwesomeIcons.commentDots,
+                                size: 40,
+                                color: AppColors.accent,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Start Your Wellness Journey',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 40),
+                            child: Text(
+                              'Ask me about nutrition, workouts, or relaxation tips!',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: const Color(0xFF64748B),
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Wrap(
+                            spacing: 12,
+                            children: [
+                              _suggestionChip(
+                                'Healthy breakfast ideas',
+                                FontAwesomeIcons.appleWhole,
+                              ),
+                              _suggestionChip(
+                                'Quick workout routine',
+                                FontAwesomeIcons.dumbbell,
+                              ),
+                              _suggestionChip(
+                                'Stress relief tips',
+                                FontAwesomeIcons.spa,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     );
                   }
@@ -99,88 +289,128 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
 
-            // Input bar
-            SafeArea(
-              top: false,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  border: Theme.of(context).brightness == Brightness.dark
-                      ? Border.all(color: Theme.of(context).dividerColor)
-                      : null,
-                  boxShadow: Theme.of(context).brightness == Brightness.dark
-                      ? []
-                      : [
-                          BoxShadow(
-                            color: Theme.of(
-                              context,
-                            ).dividerColor.withOpacity(0.7),
-                            blurRadius: 10,
-                            offset: const Offset(0, -2),
+            // Modern input section
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Mode selector chips
+                      Row(
+                        children: [
+                          Text(
+                            'Mode:',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: const Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              children: [
+                                _quickTag(
+                                  'Workout',
+                                  FontAwesomeIcons.dumbbell,
+                                  'workout',
+                                ),
+                                _quickTag(
+                                  'Meal',
+                                  FontAwesomeIcons.utensils,
+                                  'meal',
+                                ),
+                                _quickTag(
+                                  'Relax',
+                                  FontAwesomeIcons.spa,
+                                  'relax',
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        _quickTag('Workout'),
-                        _quickTag('Meal'),
-                        _quickTag('Relax'),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            minLines: 1,
-                            maxLines: 4,
-                            textInputAction: TextInputAction.newline,
-                            style: AppTextStyles.input,
-                            decoration: InputDecoration(
-                              hintText: 'Type your message... ',
-                              hintStyle: AppTextStyles.hint,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
+                      ),
+                      const SizedBox(height: 12),
+                      // Input field
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: TextField(
+                                controller: _controller,
+                                focusNode: _focusNode,
+                                maxLines: null,
+                                textInputAction: TextInputAction.newline,
+                                style: AppTextStyles.bodyMedium,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      'Ask me anything about your health...',
+                                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          height: 44,
-                          width: 44,
-                          child: ElevatedButton(
-                            onPressed: _sending ? null : _handleSend,
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              shape: const CircleBorder(),
+                          const SizedBox(width: 8),
+                          // Send button
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.accent,
+                                  AppColors.accent.withValues(alpha: 0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accent.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            child: _sending
-                                ? const SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : const FaIcon(FontAwesomeIcons.paperPlane, size: 18),
+                            child: IconButton(
+                              onPressed: _handleSend,
+                              icon: const FaIcon(
+                                FontAwesomeIcons.paperPlane,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -190,34 +420,71 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _quickTag(String label) {
-    final selected = _selectedTag == label;
-    return FilterChip(
-      label: Text(
-        label,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: selected
-              ? Colors.white
-              : Theme.of(context).colorScheme.onSurface,
-          fontWeight: FontWeight.w600,
+  Widget _suggestionChip(String text, IconData icon) {
+    return InkWell(
+      onTap: () {
+        _controller.text = text;
+        _focusNode.requestFocus();
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FaIcon(icon, size: 14, color: AppColors.accent),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: const Color(0xFF475569),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _quickTag(String label, IconData icon, String value) {
+    final selected = _selectedTag == value;
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(
+            icon,
+            size: 14,
+            color: selected ? Colors.white : AppColors.accent,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: selected ? Colors.white : const Color(0xFF475569),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
       selected: selected,
-      showCheckmark: true,
-      checkmarkColor: Colors.white,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      showCheckmark: false,
+      backgroundColor: const Color(0xFFF1F5F9),
       selectedColor: AppColors.accent,
       side: BorderSide(
-        color: selected ? AppColors.accent : Theme.of(context).dividerColor,
-        width: 1,
+        color: selected ? AppColors.accent : const Color(0xFFE2E8F0),
+        width: 1.5,
       ),
-      shape: const StadiumBorder(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      onSelected: (value) {
+      onSelected: (isSelected) {
         setState(() {
-          _selectedTag = value
-              ? label
-              : (_selectedTag == label ? null : _selectedTag);
+          _selectedTag = isSelected ? value : null;
         });
       },
     );
@@ -230,42 +497,54 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMine = message.isMine;
+    final isMine = message.isMine && !message.isBot;
+    final isBot = message.isBot;
     final alignment = isMine ? Alignment.centerRight : Alignment.centerLeft;
-    final bg = isMine ? AppColors.accent : Theme.of(context).cardColor;
-    final fg = isMine ? Colors.white : Theme.of(context).colorScheme.onSurface;
-    final border = isMine
-        ? null
-        : Border.all(color: Theme.of(context).dividerColor, width: 1);
+
+    final bg = isMine
+        ? LinearGradient(
+            colors: [
+              AppColors.accent,
+              AppColors.accent.withValues(alpha: 0.85),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        : null;
+
+    final fg = isMine ? Colors.white : const Color(0xFF1E293B);
+
     final radius = BorderRadius.only(
-      topLeft: const Radius.circular(16),
-      topRight: const Radius.circular(16),
-      bottomLeft: Radius.circular(isMine ? 16 : 4),
-      bottomRight: Radius.circular(isMine ? 4 : 16),
+      topLeft: const Radius.circular(20),
+      topRight: const Radius.circular(20),
+      bottomLeft: Radius.circular(isMine ? 20 : 4),
+      bottomRight: Radius.circular(isMine ? 4 : 20),
     );
 
     return Align(
       alignment: alignment,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.72,
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: bg,
+            gradient: bg,
+            color: isBot
+                ? const Color(0xFFF8FAFC)
+                : (isMine ? null : Colors.white),
             borderRadius: radius,
-            border: border,
+            border: isMine
+                ? null
+                : Border.all(color: const Color(0xFFE2E8F0), width: 1),
             boxShadow: [
-              if (!isMine)
-                BoxShadow(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.black45
-                      : AppColors.divider.withValues(alpha: 0.5),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isMine ? 0.15 : 0.05),
+                blurRadius: isMine ? 12 : 8,
+                offset: const Offset(0, 2),
+              ),
             ],
           ),
           child: Column(
@@ -273,15 +552,49 @@ class _MessageBubble extends StatelessWidget {
                 ? CrossAxisAlignment.end
                 : CrossAxisAlignment.start,
             children: [
+              if (isBot) ...[
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: FaIcon(
+                        FontAwesomeIcons.robot,
+                        size: 12,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Health Coach',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(
                 message.content,
-                style: AppTextStyles.bodyLarge.copyWith(color: fg),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: fg,
+                  height: 1.5,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 _formatTime(message.timestamp),
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: isMine ? Colors.white70 : AppColors.textLight,
+                  color: isMine
+                      ? Colors.white.withValues(alpha: 0.8)
+                      : const Color(0xFF94A3B8),
+                  fontSize: 11,
                 ),
               ),
             ],
