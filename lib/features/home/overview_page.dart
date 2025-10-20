@@ -16,10 +16,8 @@ class OverviewPage extends StatefulWidget {
   State<OverviewPage> createState() => _OverviewPageState();
 }
 
-class _OverviewPageState extends State<OverviewPage>
-    with SingleTickerProviderStateMixin {
+class _OverviewPageState extends State<OverviewPage> {
   late final HealthDataProvider _provider;
-  late AnimationController _animationController;
   String? _displayName;
 
   @override
@@ -28,13 +26,7 @@ class _OverviewPageState extends State<OverviewPage>
     _provider = HealthDataProvider();
     _provider.addListener(_onProviderChanged);
 
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    // Start animation when data loads
-    _animationController.forward();
+    // No heavyweight animations for faster first paint
 
     // Load user name from Supabase user_identity (via UserService)
     _loadUserName();
@@ -44,7 +36,6 @@ class _OverviewPageState extends State<OverviewPage>
   void dispose() {
     _provider.removeListener(_onProviderChanged);
     _provider.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 

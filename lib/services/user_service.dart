@@ -26,6 +26,8 @@ class UserService {
       'sleep_target_hours'; // double hours
   static const String _applyTargetsToTodayKey =
       'apply_targets_to_today'; // bool
+  // Workout weekly progress
+  static const String _workoutCurrentDayIndexKey = 'workout_current_day_index'; // int (1-based)
 
   Box? _userBox;
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -218,6 +220,19 @@ class UserService {
     } catch (e) {
       print('Error syncing user_identity (signup): $e');
     }
+  }
+
+  // ---- Workout progress (local) ----
+  Future<int> getWorkoutCurrentDayIndex() async {
+    final box = await _getUserBox;
+    final idx = box.get(_workoutCurrentDayIndexKey, defaultValue: 1);
+    if (idx is int && idx >= 1) return idx;
+    return 1;
+  }
+
+  Future<void> setWorkoutCurrentDayIndex(int index) async {
+    final box = await _getUserBox;
+    await box.put(_workoutCurrentDayIndexKey, index < 1 ? 1 : index);
   }
 
   // Save survey data

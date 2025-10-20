@@ -17,6 +17,7 @@ import 'package:final_project/services/user_service.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:final_project/features/habit/history_page.dart';
+import 'package:final_project/features/exercise/exercise_list_page.dart';
 
 void main() async {
   runZonedGuarded(
@@ -110,6 +111,8 @@ class MyApp extends StatelessWidget {
             '/settings': (context) => const SettingsPage(),
             '/chat': (context) => const ChatPage(),
             '/habit_history': (context) => const HabitHistoryPage(),
+            '/exercises': (context) => const ExerciseListPage(),
+            // Detail uses MaterialPageRoute in list screen to pass the object
           },
         );
       },

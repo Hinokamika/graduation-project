@@ -1,23 +1,31 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:final_project/model/message.dart';
-import 'package:flutter/material.dart';
+// ChangeNotifier is in foundation; no need for material
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class ChatService extends ChangeNotifier {
   final _supabaseClient = Supabase.instance.client;
-  // Build API URL from .env: CHAT_SERVER + '/chat_health'; fallback to default base
+  static final http.Client _httpClient = http.Client();
+  // Build API URL strictly from .env: CHAT_SERVER must be a full endpoint
   static String get _apiUrl {
-    final raw = (dotenv.env['CHAT_SERVER'] ?? '').trim();
-    if (raw.isNotEmpty) {
-      final base = raw.endsWith('/') ? raw.substring(0, raw.length - 1) : raw;
-      // If the env already includes the endpoint, use as-is
-      if (base.endsWith('/chat_health')) return base;
-      return "$base/chat_health";
+    final url = (dotenv.env['CHAT_SERVER'] ?? '').trim();
+    if (url.isEmpty) {
+      throw StateError('CHAT_SERVER is not configured in .env');
     }
-    // Fallback base + path
-    return 'https://healthcare-chat-ghmf5cq3za-de.a.run.app/chat_health';
+    if (kDebugMode) {
+      if (url.endsWith('/mcp')) {
+        debugPrint(
+            '[ChatService] CHAT_SERVER points to /mcp. The chat page expects the full chat endpoint (e.g., "/chat_health"). Current: $url');
+      }
+      if (!url.startsWith('http')) {
+        debugPrint('[ChatService] CHAT_SERVER does not look like a valid URL: $url');
+      }
+    }
+    return url;
   }
 
   // Store conversation history in memory
@@ -31,6 +39,7 @@ class ChatService extends ChangeNotifier {
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
         .order('created_at', ascending: true)
+        .limit(100)
         .map(
           (maps) => maps.map((map) => Message.fromJson(map, userId)).toList(),
         );
@@ -49,14 +58,27 @@ class ChatService extends ChangeNotifier {
       'role': 'user',
       // rely on DB default now() for created_at
     };
-    await _supabaseClient.from('messages').insert(userMessagePayload);
+    // Fire-and-forget insert to reduce perceived latency
+    // Errors are logged but do not block the chat request
+    unawaited(
+      _supabaseClient
+          .from('messages')
+          .insert(userMessagePayload)
+          .catchError((e) {
+        if (kDebugMode) debugPrint('[ChatService] insert user message failed: $e');
+      }),
+    );
 
     // Add user message to conversation history
     _conversationHistory.add({'role': 'user', 'content': content});
 
     // Call healthcare chat API
     try {
-      final response = await http.post(
+      if (kDebugMode) {
+        debugPrint('[ChatService] POST $_apiUrl');
+      }
+      final response = await _httpClient
+          .post(
         Uri.parse(_apiUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -64,7 +86,8 @@ class ChatService extends ChangeNotifier {
           'mode': mode.toLowerCase(),
           'temperature': 0.2,
         }),
-      );
+      )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -80,9 +103,22 @@ class ChatService extends ChangeNotifier {
           'user_id': userId,
           'role': 'assistant',
         };
-        await _supabaseClient.from('messages').insert(aiMessagePayload);
+        // Fire-and-forget insert of AI response
+        unawaited(
+          _supabaseClient
+              .from('messages')
+              .insert(aiMessagePayload)
+              .catchError((e) {
+            if (kDebugMode) {
+              debugPrint('[ChatService] insert AI message failed: $e');
+            }
+          }),
+        );
       } else {
-        throw Exception('API request failed: ${response.statusCode}');
+        final snippet = response.body.length > 200
+            ? response.body.substring(0, 200) + '...'
+            : response.body;
+        throw Exception('API request failed ${response.statusCode} @ $_apiUrl: $snippet');
       }
     } catch (e) {
       throw Exception('Failed to get AI response: $e');

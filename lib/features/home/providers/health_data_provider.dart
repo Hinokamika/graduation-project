@@ -28,14 +28,14 @@ class HealthDataProvider extends ChangeNotifier {
   bool get hasHealthPermissions => _hasHealthPermissions;
 
   HealthDataProvider() {
-    _initializeData();
+    // Kick off a first render fast: load data immediately
+    refreshData();
+    // Check permissions in background; when ready, do a HealthKit-only refresh
+    unawaited(_checkHealthPermissions().then((_) => _refreshHealthKitData()));
     _startAutoRefresh();
   }
 
-  Future<void> _initializeData() async {
-    await _checkHealthPermissions();
-    await refreshData();
-  }
+  // Initializer removed in favor of faster, parallel startup
 
   Future<void> _checkHealthPermissions() async {
     try {
@@ -121,10 +121,18 @@ class HealthDataProvider extends ChangeNotifier {
   }
 
   Future<HealthTargets> _loadTargets() async {
-    final steps = await _userService.getStepsTarget();
-    final calories = await _userService.getCaloriesTarget();
-    final standingTime = await _userService.getStandingTimeTargetMinutes();
-    final sleep = await _userService.getSleepTargetHours();
+    // Fetch all targets concurrently to reduce latency
+    final results = await Future.wait([
+      _userService.getStepsTarget(),
+      _userService.getCaloriesTarget(),
+      _userService.getStandingTimeTargetMinutes(),
+      _userService.getSleepTargetHours(),
+    ]);
+
+    final steps = results[0] as int;
+    final calories = results[1] as int;
+    final standingTime = results[2] as int;
+    final sleep = results[3] as double;
 
     return HealthTargets(
       stepsTarget: steps,
@@ -135,9 +143,13 @@ class HealthDataProvider extends ChangeNotifier {
   }
 
   Future<HealthMetrics> _loadTodayMetrics() async {
-    // Try HealthKit first, then fallback to local storage
-    final healthKitMetrics = await _loadHealthKitMetrics();
-    final localMetrics = await _loadLocalMetrics();
+    // Load HealthKit and local in parallel, then merge
+    final results = await Future.wait([
+      _loadHealthKitMetrics(),
+      _loadLocalMetrics(),
+    ]);
+    final healthKitMetrics = results[0] as HealthMetrics?;
+    final localMetrics = results[1] as HealthMetrics?;
 
     // Merge data, preferring HealthKit when available
     return HealthMetrics(

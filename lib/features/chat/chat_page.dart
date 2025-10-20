@@ -69,82 +69,6 @@ class _ChatPageState extends State<ChatPage> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Column(
           children: [
-            // Modern gradient header
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF667EEA), Color(0xFF764BA2)],
-                ),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                  child: Row(
-                    children: [
-                      // Coach avatar
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: FaIcon(
-                            FontAwesomeIcons.robot,
-                            color: AppColors.accent,
-                            size: 24,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Health Coach',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'AI-powered wellness assistant',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Clear conversation button
-                      IconButton(
-                        onPressed: () {
-                          _chatService.clearHistory();
-                        },
-                        icon: const Icon(
-                          Icons.refresh_rounded,
-                          color: Colors.white,
-                        ),
-                        tooltip: 'Clear conversation',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
             // Messages list
             Expanded(
               child: StreamBuilder<List<Message>>(
@@ -206,69 +130,85 @@ class _ChatPageState extends State<ChatPage> {
                   }
                   final data = snapshot.data ?? [];
                   if (data.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.accent.withValues(alpha: 0.1),
-                                  AppColors.accent.withValues(alpha: 0.05),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints:
+                                BoxConstraints(minHeight: constraints.maxHeight),
                             child: Center(
-                              child: FaIcon(
-                                FontAwesomeIcons.commentDots,
-                                size: 40,
-                                color: AppColors.accent,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppColors.accent
+                                                .withValues(alpha: 0.1),
+                                            AppColors.accent
+                                                .withValues(alpha: 0.05),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(50),
+                                      ),
+                                      child: Center(
+                                        child: FaIcon(
+                                          FontAwesomeIcons.commentDots,
+                                          size: 40,
+                                          color: AppColors.accent,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      'Start Your Wellness Journey',
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF1E293B),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Ask me about nutrition, workouts, or relaxation tips!',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        color: const Color(0xFF64748B),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Wrap(
+                                      spacing: 12,
+                                      children: [
+                                        _suggestionChip(
+                                          'Healthy breakfast ideas',
+                                          FontAwesomeIcons.appleWhole,
+                                        ),
+                                        _suggestionChip(
+                                          'Quick workout routine',
+                                          FontAwesomeIcons.dumbbell,
+                                        ),
+                                        _suggestionChip(
+                                          'Stress relief tips',
+                                          FontAwesomeIcons.spa,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Start Your Wellness Journey',
-                            style: AppTextStyles.titleMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 40),
-                            child: Text(
-                              'Ask me about nutrition, workouts, or relaxation tips!',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: const Color(0xFF64748B),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Wrap(
-                            spacing: 12,
-                            children: [
-                              _suggestionChip(
-                                'Healthy breakfast ideas',
-                                FontAwesomeIcons.appleWhole,
-                              ),
-                              _suggestionChip(
-                                'Quick workout routine',
-                                FontAwesomeIcons.dumbbell,
-                              ),
-                              _suggestionChip(
-                                'Stress relief tips',
-                                FontAwesomeIcons.spa,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   }
                   // Show latest at bottom: reverse list + reverse listview

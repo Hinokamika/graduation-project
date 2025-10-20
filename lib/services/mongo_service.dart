@@ -22,6 +22,9 @@ class MongoService {
   // Shared DB connection across instances
   static mongo.Db? _db;
   static Completer<void>? _openCompleter;
+  // Simple in-memory cache with TTL to avoid repeated Atlas queries
+  static final Map<String, _CacheEntry<List<Map<String, dynamic>>>> _cache = {};
+  static const Duration _defaultTtl = Duration(minutes: 5);
 
   /// Ensure a connected DB and return the requested collection.
   Future<mongo.DbCollection> _getCollection() async {
@@ -185,6 +188,9 @@ class MongoService {
     String? force,
     int? limit,
   }) async {
+    final key = 'filterExercises|name=${name ?? ''}|type=${type ?? ''}|level=${level ?? ''}|force=${force ?? ''}|limit=${limit ?? 0}';
+    final cached = _cache[key];
+    if (cached != null && !cached.isExpired) return cached.value;
     await _ensureDbOpen();
     final col = _db!.collection('exercises');
     final mongo.SelectorBuilder sel = mongo.where;
@@ -201,7 +207,29 @@ class MongoService {
       sel.eq('force', force.trim());
     }
     if (limit != null && limit > 0) sel.limit(limit);
-    return await col.find(sel).toList();
+    final docs = await col.find(sel).toList();
+    _cache[key] = _CacheEntry(docs, DateTime.now().add(_defaultTtl));
+    return docs;
+  }
+
+  /// Filter exercises by exercise type, matching either `type` or `exercise_type` fields (case-insensitive).
+  static Future<List<Map<String, dynamic>>> filterExercisesByExerciseType(
+    String exerciseType, {
+    int? limit,
+  }) async {
+    final key = 'filterExercisesByType|type=$exerciseType|limit=${limit ?? 0}';
+    final cached = _cache[key];
+    if (cached != null && !cached.isExpired) return cached.value;
+    await _ensureDbOpen();
+    final col = _db!.collection('exercises');
+    // OR match on `type` or `exercise_type`, case-insensitive
+    mongo.SelectorBuilder sel = mongo.where
+        .match('type', exerciseType, caseInsensitive: true)
+        .or(mongo.where.match('exercise_type', exerciseType, caseInsensitive: true));
+    if (limit != null && limit > 0) sel = sel.limit(limit);
+    final docs = await col.find(sel).toList();
+    _cache[key] = _CacheEntry(docs, DateTime.now().add(_defaultTtl));
+    return docs;
   }
 
   /// Filter `meals` by optional fields: [name] (case-insensitive contains)
@@ -223,4 +251,11 @@ class MongoService {
     if (limit != null && limit > 0) sel.limit(limit);
     return await col.find(sel).toList();
   }
+}
+
+class _CacheEntry<T> {
+  final T value;
+  final DateTime expiresAt;
+  _CacheEntry(this.value, this.expiresAt);
+  bool get isExpired => DateTime.now().isAfter(expiresAt);
 }
