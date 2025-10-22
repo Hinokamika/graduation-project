@@ -17,6 +17,13 @@ class IntroPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
+                onPressed: () => Navigator.of(context).pop(),
+                tooltip: 'Back',
+              )
+            : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -136,10 +143,13 @@ class IntroPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const FaIcon(
-                  FontAwesomeIcons.solidHeart,
-                  size: 40,
-                  color: AppColors.accent,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 35.0),
+                  child: const FaIcon(
+                    FontAwesomeIcons.solidHeart,
+                    size: 40,
+                    color: AppColors.accent,
+                  ),
                 ),
               ),
 

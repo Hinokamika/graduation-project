@@ -125,9 +125,12 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Enter your email address',
                   hintStyle: AppTextStyles.hint,
                   // Use themed fill from InputDecorationTheme
-                  prefixIcon: const FaIcon(
-                    FontAwesomeIcons.envelope,
-                    color: AppColors.textLight,
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    child: const FaIcon(
+                      FontAwesomeIcons.envelope,
+                      color: AppColors.textLight,
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -173,9 +176,12 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Enter your password',
                   hintStyle: AppTextStyles.hint,
                   // Use themed fill from InputDecorationTheme
-                  prefixIcon: const FaIcon(
-                    FontAwesomeIcons.lock,
-                    color: AppColors.textLight,
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    child: const FaIcon(
+                      FontAwesomeIcons.lock,
+                      color: AppColors.textLight,
+                    ),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),

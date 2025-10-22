@@ -130,7 +130,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Full Name',
-                  prefixIcon: FaIcon(FontAwesomeIcons.user),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    child: FaIcon(FontAwesomeIcons.user),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -157,7 +160,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 ],
                 decoration: const InputDecoration(
                   labelText: 'Email Address',
-                  prefixIcon: FaIcon(FontAwesomeIcons.envelope),
+                  prefixIcon: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    child: FaIcon(FontAwesomeIcons.envelope),
+                  ),
                 ),
                 validator: (value) {
                   final v = (value ?? '').trim();
@@ -174,7 +180,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: FaIcon(FontAwesomeIcons.lock),
+                  prefixIcon: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    child: FaIcon(FontAwesomeIcons.lock),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -192,7 +201,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
-                  prefixIcon: FaIcon(FontAwesomeIcons.lock),
+                  prefixIcon: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    child: FaIcon(FontAwesomeIcons.lock),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {

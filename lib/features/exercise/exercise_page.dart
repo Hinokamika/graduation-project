@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
-import 'package:final_project/services/user_service.dart';
 import 'package:final_project/services/mongo_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/features/exercise/exercise_detail_page.dart';
+import 'package:final_project/features/exercise/today_workout_detail_page.dart';
 import 'package:final_project/features/exercise/exercise_list_page.dart';
 
 class ExercisePage extends StatefulWidget {
@@ -74,7 +74,7 @@ class _ExercisePageState extends State<ExercisePage> {
             },
             backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.white,
             foregroundColor: AppColors.accent,
-            child: const Icon(Icons.search, size: 24),
+            child: const FaIcon(FontAwesomeIcons.magnifyingGlass, size: 24),
           ),
         ],
       ),
@@ -249,8 +249,9 @@ class _ExercisePageState extends State<ExercisePage> {
               'id,exercise_name,description,difficulty_level,exercise_category,duration_minutes,repetitions,day,created_at,finished',
             )
             .order('created_at', ascending: true);
-        final listFallback =
-            (fallbackRows is List) ? fallbackRows.cast<Map>() : <Map>[];
+        final listFallback = (fallbackRows is List)
+            ? fallbackRows.cast<Map>()
+            : <Map>[];
         if (listFallback.isNotEmpty) {
           list = listFallback;
         }
@@ -277,20 +278,18 @@ class _ExercisePageState extends State<ExercisePage> {
           ),
         );
       }
-      List<_PlanDay> days = byDay.entries
-          .map((e) {
-            final label = e.key;
-            final items = e.value;
-            final finished = items.isNotEmpty && items.every((it) => it.finished == true);
-            return _PlanDay(
-              label: label,
-              index: _dayIndexFromLabel(label),
-              items: items,
-              finished: finished,
-            );
-          })
-          .toList()
-        ..sort((a, b) => a.index.compareTo(b.index));
+      List<_PlanDay> days = byDay.entries.map((e) {
+        final label = e.key;
+        final items = e.value;
+        final finished =
+            items.isNotEmpty && items.every((it) => it.finished == true);
+        return _PlanDay(
+          label: label,
+          index: _dayIndexFromLabel(label),
+          items: items,
+          finished: finished,
+        );
+      }).toList()..sort((a, b) => a.index.compareTo(b.index));
 
       // Fallback: No plan found in Supabase → build a simple week plan from Mongo exercises
       if (days.isEmpty) {
@@ -302,14 +301,21 @@ class _ExercisePageState extends State<ExercisePage> {
         }
       }
 
-      final us = UserService();
-      final savedIdx = await us.getWorkoutCurrentDayIndex();
-      final clamped = days.isEmpty ? 1 : savedIdx.clamp(1, days.length);
+      // Determine current day from Supabase: the first unfinished day (start at Day 1),
+      // only advance when a day is completed.
+      int derivedIdx;
+      final unfinished = days.where((d) => !d.finished).toList()
+        ..sort((a, b) => a.index.compareTo(b.index));
+      if (unfinished.isNotEmpty) {
+        derivedIdx = unfinished.first.index;
+      } else {
+        derivedIdx = days.isNotEmpty ? days.first.index : 1;
+      }
 
       if (!mounted) return;
       setState(() {
         _planDays = days;
-        _currentDayIndex = clamped;
+        _currentDayIndex = derivedIdx;
       });
     } catch (e) {
       setState(() => _planError = e.toString());
@@ -344,7 +350,14 @@ class _ExercisePageState extends State<ExercisePage> {
       final end = (start + perDay).clamp(0, items.length);
       if (start >= items.length) break;
       final dayItems = items.sublist(start, end);
-          out.add(_PlanDay(label: 'Day ${d + 1}', index: d + 1, items: dayItems, finished: false));
+      out.add(
+        _PlanDay(
+          label: 'Day ${d + 1}',
+          index: d + 1,
+          items: dayItems,
+          finished: false,
+        ),
+      );
     }
     return out;
   }
@@ -378,30 +391,53 @@ class _ExercisePageState extends State<ExercisePage> {
     return 999;
   }
 
+  // Get current weekday index (1=Monday, 7=Sunday)
+  int _getCurrentWeekdayIndex() {
+    final now = DateTime.now();
+    return now.weekday; // DateTime.weekday: 1=Monday, 7=Sunday
+  }
+
+  // Convert day index to weekday name
+  String _getWeekdayName(int index, {bool short = false}) {
+    const shortNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const fullNames = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+
+    if (index < 1 || index > 7) return short ? 'Mon' : 'Monday';
+    return short ? shortNames[index - 1] : fullNames[index - 1];
+  }
+
+  _PlanDay? _getPlanDayByIndex(int idx) {
+    for (final d in _planDays) {
+      if (d.index == idx) return d;
+    }
+    return null;
+  }
+
   Future<void> _completeToday() async {
     if (_planDays.isEmpty) return;
-    // Mark current day finished in Supabase (best-effort)
     try {
-      await _setFinishedForCurrentDay(true);
+      await _setFinishedForDay(_currentDayIndex, true);
     } catch (e) {
       // ignore: avoid_print
       print('Failed to set finished on Supabase: $e');
     }
     if (!mounted) return;
-    // Advance to next day and persist locally
-    final next = _currentDayIndex + 1;
-    final wrapped = next > _planDays.length ? 1 : next;
-    setState(() => _currentDayIndex = wrapped);
-    await UserService().setWorkoutCurrentDayIndex(wrapped);
-    // Reload to reflect finished flags and keep UI in sync
+    // Reload; _loadWorkoutPlan will move to the next unfinished day.
     await _loadWorkoutPlan();
     if (!mounted) return;
-    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
+            FaIcon(FontAwesomeIcons.circleCheck, color: Colors.white),
             SizedBox(width: 12),
             Text('Workout completed! Great job! 🎉'),
           ],
@@ -412,72 +448,25 @@ class _ExercisePageState extends State<ExercisePage> {
     );
   }
 
-  /*void _quickStartWorkout(BuildContext context) {
-    if (_planDays.isNotEmpty &&
-        _currentDayIndex > 0 &&
-        _currentDayIndex <= _planDays.length) {
-      final day = _planDays[_currentDayIndex - 1];
-      if (day.items.isNotEmpty) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Quick Start'),
-            content: Text(
-              'Start today\'s workout (${day.items.length} exercises)?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Workout started! Timer feature coming soon.',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Start'),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'No workout planned for today. Browse exercises to get started!',
-        ),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }*/
-
-  Future<void> _setFinishedForCurrentDay(bool value) async {
+  Future<void> _setFinishedForDay(int index, bool value) async {
     final client = Supabase.instance.client;
     final uid = client.auth.currentUser?.id;
-    final current = _planDays[(_currentDayIndex - 1).clamp(0, _planDays.length - 1)];
+    final current =
+        _getPlanDayByIndex(index) ??
+        _planDays[(_currentDayIndex - 1).clamp(0, _planDays.length - 1)];
     final day = current.label;
-    final ids = current.items.map((e) => e.id).whereType<int>().toList(growable: false);
+    final ids = current.items
+        .map((e) => e.id)
+        .whereType<int>()
+        .toList(growable: false);
     try {
       if (ids.isNotEmpty) {
         try {
+          final inList = '(${ids.join(',')})';
           await client
               .from('workout_plan')
               .update({'finished': value})
-              .filter('id', 'in', ids);
+              .filter('id', 'in', inList);
         } on PostgrestException catch (_) {
           // Fallback: use OR filter when 'in' helper isn't available
           final orExpr = ids.map((id) => 'id.eq.$id').join(',');
@@ -553,8 +542,10 @@ class _ExercisePageState extends State<ExercisePage> {
         ],
       );
     }
-    final day =
-        _planDays[(_currentDayIndex - 1).clamp(0, _planDays.length - 1)];
+    // Today's workout uses sequential day flow; show the plan's day label
+    final day = _getPlanDayByIndex(_currentDayIndex);
+    final dayLabel = day?.label ?? 'Day $_currentDayIndex';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -569,7 +560,7 @@ class _ExercisePageState extends State<ExercisePage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                day.label,
+                dayLabel,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.accent,
                   fontWeight: FontWeight.w700,
@@ -579,66 +570,90 @@ class _ExercisePageState extends State<ExercisePage> {
           ],
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Theme.of(context).brightness == Brightness.dark
-                ? Border.all(color: Theme.of(context).dividerColor)
-                : null,
-            boxShadow: Theme.of(context).brightness == Brightness.dark
-                ? []
-                : [
-                    BoxShadow(
-                      color: AppColors.divider.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...day.items.map(
-                (it) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildExerciseItem(
-                    name: it.name,
-                    sets:
-                        it.repetitions ??
-                        (it.durationMinutes != null
-                            ? '${it.durationMinutes} min'
-                            : (it.difficulty?.isNotEmpty == true
-                                  ? it.difficulty!
-                                  : '')),
-                    completed: it.finished == true,
-                  ),
-                ),
+        GestureDetector(
+          onTap: () async {
+            final updated = await Navigator.of(context).push<bool>(
+              MaterialPageRoute(
+                builder: (_) => TodayWorkoutDetailPage(dayLabel: dayLabel),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accent,
-                        foregroundColor: AppColors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+            );
+            if (updated == true) {
+              // Refresh plan to reflect updates from detail page
+              await _loadWorkoutPlan();
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Theme.of(context).brightness == Brightness.dark
+                  ? Border.all(color: Theme.of(context).dividerColor)
+                  : null,
+              boxShadow: Theme.of(context).brightness == Brightness.dark
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: AppColors.divider.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (day != null && day.items.isNotEmpty)
+                  ...day.items.map(
+                    (it) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildExerciseItem(
+                        name: it.name,
+                        sets:
+                            (it.repetitions != null &&
+                                it.repetitions!.isNotEmpty)
+                            ? '${it.repetitions}'
+                            : '',
+                        completed: it.finished == true,
+                      ),
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'No exercises scheduled for $dayLabel',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _completeToday,
+                        child: Text(
+                          'Mark Today Complete',
+                          style: AppTextStyles.button,
                         ),
                       ),
-                      onPressed: _completeToday,
-                      child: Text(
-                        'Mark Today Complete',
-                        style: AppTextStyles.button,
-                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -662,10 +677,16 @@ class _ExercisePageState extends State<ExercisePage> {
             shape: BoxShape.circle,
           ),
           child: completed
-              ? const FaIcon(
-                  FontAwesomeIcons.check,
-                  color: Colors.white,
-                  size: 14,
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6.0,
+                    vertical: 5.0,
+                  ),
+                  child: const FaIcon(
+                    FontAwesomeIcons.check,
+                    color: Colors.white,
+                    size: 14,
+                  ),
                 )
               : null,
         ),
@@ -690,10 +711,8 @@ class _ExercisePageState extends State<ExercisePage> {
   }
 
   Widget _buildWeeklyProgress() {
-    final total = _planDays.isNotEmpty ? _planDays.length : 7;
-    final completedCount = _planDays.isNotEmpty
-        ? _planDays.where((d) => d.finished).length
-        : (_currentDayIndex - 1).clamp(0, total);
+    // Display only days that exist in the plan, and color by finished status.
+    final days = [..._planDays]..sort((a, b) => a.index.compareTo(b.index));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -733,30 +752,21 @@ class _ExercisePageState extends State<ExercisePage> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  for (int i = 0; i < total; i++) ...[
+                  for (int idx = 0; idx < days.length; idx++) ...[
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          if (i == _currentDayIndex - 1) _completeToday();
+                          if (days[idx].index == _currentDayIndex) {
+                            _completeToday();
+                          }
                         },
                         child: _buildDayCard(
-                          _planDays.isNotEmpty
-                              ? _planDays[i].label
-                              : [
-                                  'Mon',
-                                  'Tue',
-                                  'Wed',
-                                  'Thu',
-                                  'Fri',
-                                  'Sat',
-                                  'Sun',
-                                ][i % 7],
-                          _planDays.isNotEmpty ? _planDays[i].finished : i < completedCount,
-                          isToday: i == _currentDayIndex - 1,
+                          days[idx].label,
+                          days[idx].finished,
                         ),
                       ),
                     ),
-                    if (i != total - 1) const SizedBox(width: 8),
+                    if (idx != days.length - 1) const SizedBox(width: 8),
                   ],
                 ],
               ),
@@ -769,20 +779,34 @@ class _ExercisePageState extends State<ExercisePage> {
 
   Widget _buildDayCard(String day, bool completed, {bool isToday = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       decoration: BoxDecoration(
         color: completed
             ? AppColors.success.withValues(alpha: 0.1)
+            : isToday
+            ? AppColors.accent.withValues(alpha: 0.1)
             : Theme.of(context).dividerColor.withOpacity(0.3),
         borderRadius: BorderRadius.circular(8),
+        border: isToday ? Border.all(color: AppColors.accent, width: 2) : null,
       ),
-      child: Text(
-        isToday ? '$day • Today' : day,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: completed ? AppColors.success : AppColors.textLight,
-          fontWeight: completed ? FontWeight.w600 : FontWeight.normal,
-        ),
-        textAlign: TextAlign.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            day,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: completed
+                  ? AppColors.success
+                  : isToday
+                  ? AppColors.accent
+                  : AppColors.textLight,
+              fontWeight: isToday || completed
+                  ? FontWeight.w600
+                  : FontWeight.normal,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -977,10 +1001,10 @@ class _ExpandableExerciseCategoryState
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                Icon(
+                FaIcon(
                   _expanded
-                      ? Icons.keyboard_arrow_up
-                      : Icons.keyboard_arrow_down,
+                      ? FontAwesomeIcons.chevronUp
+                      : FontAwesomeIcons.chevronDown,
                   color: AppColors.accent,
                 ),
               ],
@@ -1047,20 +1071,6 @@ class _ExpandableExerciseCategoryState
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.fitness_center,
-                                  color: AppColors.accent,
-                                ),
-                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -1092,8 +1102,8 @@ class _ExpandableExerciseCategoryState
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(
-                                Icons.chevron_right,
+                              const FaIcon(
+                                FontAwesomeIcons.chevronRight,
                                 color: AppColors.textLight,
                               ),
                             ],

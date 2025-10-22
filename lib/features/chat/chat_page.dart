@@ -2,6 +2,8 @@ import 'package:final_project/model/message.dart';
 import 'package:final_project/services/chat_service.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:final_project/features/chat/animations/pulsing_dots.dart';
+import 'package:final_project/features/chat/animations/typewriter_text.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -19,6 +21,9 @@ class _ChatPageState extends State<ChatPage> {
   final FocusNode _focusNode = FocusNode();
   bool _sending = false;
   String? _selectedTag;
+  // Track which bot messages have already animated to avoid re-animating.
+  final Set<String> _animatedBotIds = <String>{};
+  bool _seededAnimated = false;
 
   @override
   void dispose() {
@@ -61,8 +66,9 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.getBackground(context),
       resizeToAvoidBottomInset: true,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
@@ -74,6 +80,14 @@ class _ChatPageState extends State<ChatPage> {
               child: StreamBuilder<List<Message>>(
                 stream: _chatService.getMessages(),
                 builder: (context, snapshot) {
+                  // Seed animated set with existing bot messages so only new ones animate
+                  final dataSeed = snapshot.data ?? const <Message>[];
+                  if (!_seededAnimated && dataSeed.isNotEmpty) {
+                    _animatedBotIds.addAll(
+                      dataSeed.where((m) => m.isBot).map((m) => m.id),
+                    );
+                    _seededAnimated = true;
+                  }
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return Center(
                       child: Column(
@@ -99,7 +113,7 @@ class _ChatPageState extends State<ChatPage> {
                           Text(
                             'Loading conversation...',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: const Color(0xFF64748B),
+                              color: AppColors.getTextSecondary(context),
                             ),
                           ),
                         ],
@@ -114,13 +128,13 @@ class _ChatPageState extends State<ChatPage> {
                           Icon(
                             Icons.error_outline,
                             size: 48,
-                            color: AppColors.error,
+                            color: AppColors.getErrorColor(context),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Error: ${snapshot.error}',
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.error,
+                              color: AppColors.getErrorColor(context),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -172,7 +186,7 @@ class _ChatPageState extends State<ChatPage> {
                                       'Start Your Wellness Journey',
                                       style: AppTextStyles.titleMedium.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF1E293B),
+                                        color: AppColors.getTextPrimary(context),
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -180,27 +194,9 @@ class _ChatPageState extends State<ChatPage> {
                                     Text(
                                       'Ask me about nutrition, workouts, or relaxation tips!',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: const Color(0xFF64748B),
+                                        color: AppColors.getTextTertiary(context),
                                       ),
                                       textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Wrap(
-                                      spacing: 12,
-                                      children: [
-                                        _suggestionChip(
-                                          'Healthy breakfast ideas',
-                                          FontAwesomeIcons.appleWhole,
-                                        ),
-                                        _suggestionChip(
-                                          'Quick workout routine',
-                                          FontAwesomeIcons.dumbbell,
-                                        ),
-                                        _suggestionChip(
-                                          'Stress relief tips',
-                                          FontAwesomeIcons.spa,
-                                        ),
-                                      ],
                                     ),
                                   ],
                                 ),
@@ -213,16 +209,40 @@ class _ChatPageState extends State<ChatPage> {
                   }
                   // Show latest at bottom: reverse list + reverse listview
                   final messages = data.reversed.toList(growable: false);
+                  final hasTyping = _sending; // show indicator while waiting for AI
                   return ListView.builder(
                     controller: _scrollController,
                     reverse: true,
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                    itemCount: messages.length,
+                    itemCount: messages.length + (hasTyping ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final m = messages[index];
-                      return _MessageBubble(message: m);
+                      // While waiting for AI response, render a lightweight
+                      // typing indicator bubble at the bottom (index 0).
+                      if (hasTyping && index == 0) {
+                        return const _TypingIndicatorBubble();
+                      }
+
+                      final dataIndex = index - (hasTyping ? 1 : 0);
+                      final m = messages[dataIndex];
+                      // Animate only for the newest bot message, not while typing,
+                      // and only if we haven't animated this message id before.
+                      final isNewest = dataIndex == 0;
+                      final animateText = isNewest && m.isBot && !hasTyping && !_animatedBotIds.contains(m.id);
+                      return _MessageBubble(
+                        key: ValueKey(m.id),
+                        message: m,
+                        animateText: animateText,
+                        onTypewriterComplete: animateText
+                            ? () {
+                                if (!mounted) return;
+                                setState(() {
+                                  _animatedBotIds.add(m.id);
+                                });
+                              }
+                            : null,
+                      );
                     },
                   );
                 },
@@ -232,10 +252,12 @@ class _ChatPageState extends State<ChatPage> {
             // Modern input section
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.getSurface(context),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.2)
+                        : Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -254,7 +276,7 @@ class _ChatPageState extends State<ChatPage> {
                           Text(
                             'Mode:',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: const Color(0xFF64748B),
+                              color: AppColors.getTextSecondary(context),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -291,7 +313,7 @@ class _ChatPageState extends State<ChatPage> {
                           Expanded(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
+                                color: AppColors.getHover(context),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
@@ -304,7 +326,7 @@ class _ChatPageState extends State<ChatPage> {
                                   hintText:
                                       'Ask me anything about your health...',
                                   hintStyle: AppTextStyles.bodyMedium.copyWith(
-                                    color: const Color(0xFF94A3B8),
+                                    color: AppColors.getTextTertiary(context),
                                   ),
                                   border: InputBorder.none,
                                   contentPadding: const EdgeInsets.symmetric(
@@ -370,9 +392,9 @@ class _ChatPageState extends State<ChatPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.getSurface(context),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: AppColors.getBorder(context)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -382,7 +404,7 @@ class _ChatPageState extends State<ChatPage> {
             Text(
               text,
               style: AppTextStyles.bodySmall.copyWith(
-                color: const Color(0xFF475569),
+                color: AppColors.getTextSecondary(context),
               ),
             ),
           ],
@@ -406,7 +428,7 @@ class _ChatPageState extends State<ChatPage> {
           Text(
             label,
             style: AppTextStyles.bodySmall.copyWith(
-              color: selected ? Colors.white : const Color(0xFF475569),
+              color: selected ? Colors.white : AppColors.getTextSecondary(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -414,10 +436,10 @@ class _ChatPageState extends State<ChatPage> {
       ),
       selected: selected,
       showCheckmark: false,
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: AppColors.getHover(context),
       selectedColor: AppColors.accent,
       side: BorderSide(
-        color: selected ? AppColors.accent : const Color(0xFFE2E8F0),
+        color: selected ? AppColors.accent : AppColors.getBorder(context),
         width: 1.5,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -433,7 +455,9 @@ class _ChatPageState extends State<ChatPage> {
 
 class _MessageBubble extends StatelessWidget {
   final Message message;
-  const _MessageBubble({required this.message});
+  final bool animateText;
+  final VoidCallback? onTypewriterComplete;
+  const _MessageBubble({super.key, required this.message, this.animateText = false, this.onTypewriterComplete});
 
   @override
   Widget build(BuildContext context) {
@@ -452,7 +476,7 @@ class _MessageBubble extends StatelessWidget {
           )
         : null;
 
-    final fg = isMine ? Colors.white : const Color(0xFF1E293B);
+    final fg = isMine ? Colors.white : AppColors.getTextPrimary(context);
 
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(20),
@@ -473,12 +497,12 @@ class _MessageBubble extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: bg,
             color: isBot
-                ? const Color(0xFFF8FAFC)
-                : (isMine ? null : Colors.white),
+                ? AppColors.getSurface(context)
+                : (isMine ? null : AppColors.getSurface(context)),
             borderRadius: radius,
             border: isMine
                 ? null
-                : Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                : Border.all(color: AppColors.getBorder(context), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isMine ? 0.15 : 0.05),
@@ -520,20 +544,30 @@ class _MessageBubble extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              Text(
-                message.content,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: fg,
-                  height: 1.5,
+              if (isBot && animateText)
+                TypewriterText(
+                  message.content,
+                  textStyle: AppTextStyles.bodyMedium.copyWith(
+                    color: fg,
+                    height: 1.5,
+                  ),
+                  onComplete: onTypewriterComplete,
+                )
+              else
+                Text(
+                  message.content,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: fg,
+                    height: 1.5,
+                  ),
                 ),
-              ),
               const SizedBox(height: 6),
               Text(
                 _formatTime(message.timestamp),
                 style: AppTextStyles.bodySmall.copyWith(
                   color: isMine
                       ? Colors.white.withValues(alpha: 0.8)
-                      : const Color(0xFF94A3B8),
+                      : AppColors.getTextTertiary(context),
                   fontSize: 11,
                 ),
               ),
@@ -548,5 +582,76 @@ class _MessageBubble extends StatelessWidget {
     final h = t.hour.toString().padLeft(2, '0');
     final m = t.minute.toString().padLeft(2, '0');
     return '$h:$m';
+  }
+}
+
+// Lightweight three-dots typing indicator styled like a bot bubble
+class _TypingIndicatorBubble extends StatelessWidget {
+  const _TypingIndicatorBubble();
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.getSurface(context),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              bottomLeft: Radius.circular(4),
+              bottomRight: Radius.circular(20),
+            ),
+            border: Border.all(color: AppColors.getBorder(context), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.smart_toy_rounded,
+                      size: 12,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Health Coach',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const PulsingDots(),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

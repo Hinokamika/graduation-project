@@ -84,7 +84,14 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generating Your Plan')),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Back',
+        ),
+        title: const Text('Generating Your Plan'),
+      ),
       body: Center(
         child: _error == null
             ? const Column(

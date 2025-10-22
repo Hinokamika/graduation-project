@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ExerciseDetailPage extends StatefulWidget {
   final Map<String, dynamic> exercise;
@@ -34,11 +35,20 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: FaIcon(
+            FontAwesomeIcons.arrowLeft,
+            color: AppColors.getTextPrimary(context),
+            size: 18,
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Back',
+        ),
         title: Text(name),
         actions: [
           IconButton(
             onPressed: () => _addToPlan(context, name),
-            icon: const Icon(Icons.add_circle_outline),
+            icon: const FaIcon(FontAwesomeIcons.circlePlus),
             tooltip: 'Add to workout plan',
           ),
         ],
@@ -164,19 +174,6 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
                       ),
                     )
                   else
-                    Container(
-                      height: 180,
-                      width: double.infinity,
-                      color: isDark
-                          ? const Color(0xFF1C1C1E)
-                          : const Color(0xFFF1F5F9),
-                      child: Center(
-                        child: Text(
-                          'Play on YouTube',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                      ),
-                    ),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
@@ -266,28 +263,28 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
     final attributes = <Map<String, dynamic>>[
       if (type.isNotEmpty)
         {
-          'icon': Icons.category,
+          'icon': FontAwesomeIcons.tags,
           'label': 'Type',
           'value': type,
           'color': AppColors.accent,
         },
       if (level.isNotEmpty)
         {
-          'icon': Icons.trending_up,
+          'icon': FontAwesomeIcons.arrowTrendUp,
           'label': 'Level',
           'value': level,
           'color': AppColors.success,
         },
       if (force.isNotEmpty)
         {
-          'icon': Icons.bolt,
+          'icon': FontAwesomeIcons.bolt,
           'label': 'Force',
           'value': force,
           'color': AppColors.warning,
         },
       if (equipment.isNotEmpty)
         {
-          'icon': Icons.construction,
+          'icon': FontAwesomeIcons.screwdriverWrench,
           'label': 'Equipment',
           'value': equipment,
           'color': AppColors.primary,
@@ -354,7 +351,7 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
               color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: FaIcon(icon, color: color, size: 18),
           ),
           const SizedBox(height: 8),
           Text(
@@ -500,8 +497,8 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Icon(
-                      Icons.fiber_manual_record,
+                    child: FaIcon(
+                      FontAwesomeIcons.circle,
                       size: 8,
                       color: AppColors.accent,
                     ),
@@ -575,8 +572,8 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isPrimary ? Icons.star : Icons.star_border,
+          FaIcon(
+            isPrimary ? FontAwesomeIcons.solidStar : FontAwesomeIcons.star,
             size: 14,
             color: color,
           ),

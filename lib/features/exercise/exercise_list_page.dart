@@ -4,6 +4,7 @@ import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/mongo_service.dart';
 import 'package:final_project/features/exercise/exercise_detail_page.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ExerciseListPage extends StatefulWidget {
   const ExerciseListPage({super.key});
@@ -225,13 +226,18 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Back',
+        ),
         title: const Text('All Exercises'),
         actions: [
           IconButton(
             onPressed: _showFilterDialog,
             icon: Stack(
               children: [
-                const Icon(Icons.filter_list),
+                const FaIcon(FontAwesomeIcons.filter),
                 if (_selectedLevel != 'All' || _selectedType != 'All')
                   Positioned(
                     right: 0,
@@ -265,7 +271,10 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                     onSubmitted: (v) => _load(name: v),
                     decoration: InputDecoration(
                       hintText: 'Search exercises by name...',
-                      prefixIcon: const Icon(Icons.search),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                        child: const FaIcon(FontAwesomeIcons.magnifyingGlass),
+                      ),
                       filled: true,
                       fillColor: isDark
                           ? const Color(0xFF2C2C2E)
@@ -387,8 +396,8 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.error_outline,
+                      FaIcon(
+                        FontAwesomeIcons.circleExclamation,
                         size: 64,
                         color: AppColors.error,
                       ),
@@ -410,7 +419,7 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _load,
-                        icon: const Icon(Icons.refresh),
+                        icon: const FaIcon(FontAwesomeIcons.rotateRight),
                         label: const Text('Retry'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
@@ -432,8 +441,8 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.search_off,
+                    FaIcon(
+                      FontAwesomeIcons.magnifyingGlass,
                       size: 80,
                       color: isDark
                           ? const Color(0xFF38383A)
@@ -468,7 +477,7 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                         });
                         _load();
                       },
-                      icon: const Icon(Icons.clear_all),
+                      icon: const FaIcon(FontAwesomeIcons.broom),
                       label: const Text('Clear all filters'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
@@ -549,28 +558,6 @@ class _ExerciseCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.accent.withValues(alpha: 0.2),
-                      AppColors.accent.withValues(alpha: 0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.fitness_center,
-                  color: AppColors.accent,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
               // Content
               Expanded(
                 child: Column(
@@ -604,8 +591,8 @@ class _ExerciseCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               // Arrow
-              Icon(
-                Icons.chevron_right,
+              FaIcon(
+                FontAwesomeIcons.chevronRight,
                 color: isDark
                     ? const Color(0xFF8E8E93)
                     : const Color(0xFF94A3B8),
