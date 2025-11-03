@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
@@ -43,16 +44,20 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      // Mark onboarding as complete and sync any local survey to Supabase
+      // Kick off non-critical post-login work in background to avoid blocking UI
       final userService = UserService();
-      await userService.markOnboardingComplete();
-      await userService.syncLocalSurveyToSupabase();
+      unawaited(Future(() async {
+        try {
+          await userService.markOnboardingComplete();
+          await userService.syncLocalSurveyToSupabase();
+        } catch (_) {}
+      }));
 
       if (!mounted) return;
       if (widget.returnOnSuccess) {
         Navigator.of(context).pop(true);
       } else {
-        // Navigate to home page on successful login
+        // Navigate to home page on successful login (don’t wait for background sync)
         Navigator.of(context).pushReplacementNamed('/home');
       }
     } on AuthException catch (e) {

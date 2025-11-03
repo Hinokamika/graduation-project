@@ -145,10 +145,29 @@ class PlanService {
           .select('id')
           .eq('user_id', uid)
           .maybeSingle();
+      // Parse macros from plan if available
+      int? _asInt(dynamic v) {
+        if (v == null) return null;
+        if (v is int) return v;
+        if (v is double) return v.round();
+        final s = v.toString().trim();
+        if (s.isEmpty) return null;
+        // Strip common units and separators
+        final cleaned = s
+            .replaceAll(RegExp(r'[^0-9.\-]'), '') // keep digits, dot, minus
+            .replaceAll(',', '');
+        final numVal = double.tryParse(cleaned);
+        return numVal?.round();
+      }
+      final macros = plan['calorie_and_macros'];
       final updatePayload = <String, dynamic>{
         if (firstWorkoutRow != null && firstWorkoutRow['id'] != null) 'exercise_id': firstWorkoutRow['id'],
         if (firstRelaxRow != null && firstRelaxRow['id'] != null) 'relax_id': firstRelaxRow['id'],
         if (survey['diet_type'] != null) 'diet_type': survey['diet_type'].toString(),
+        if (macros is Map && macros['calories'] != null) 'calories': _asInt(macros['calories']),
+        if (macros is Map && macros['protein_g'] != null) 'protein': _asInt(macros['protein_g']),
+        if (macros is Map && macros['carbs_g'] != null) 'carbs': _asInt(macros['carbs_g']),
+        if (macros is Map && macros['fat_g'] != null) 'fat': _asInt(macros['fat_g']),
       };
       if (existing == null) {
         await _supabase.from('user_identity').insert({

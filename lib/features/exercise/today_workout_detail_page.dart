@@ -153,15 +153,17 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
     final client = Supabase.instance.client;
     final uid = client.auth.currentUser?.id;
 
-    // Build inserts
-    final inserts = selected.map((ex) {
+    // Build inserts (replace instructions with AI transcript when possible)
+    final inserts = await Future.wait(selected.map((ex) async {
       final name = (ex['name'] ?? 'Exercise').toString();
-      final instructions = ex['instructions'];
       String? desc;
-      if (instructions is List) {
-        desc = instructions.map((e) => e.toString()).join('\n');
-      } else if (instructions != null) {
-        desc = instructions.toString();
+      if (desc == null || desc.trim().isEmpty) {
+        final instructions = ex['instructions'];
+        if (instructions is List) {
+          desc = instructions.map((e) => e.toString()).join('\n');
+        } else if (instructions != null) {
+          desc = instructions.toString();
+        }
       }
       final level = (ex['level'] ?? '').toString();
       final type = (ex['type'] ?? ex['exercise_type'] ?? '').toString();
@@ -176,7 +178,7 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
         day: widget.dayLabel,
       );
       return dto.toMap();
-    }).toList();
+    }));
 
     try {
       if (replace) {

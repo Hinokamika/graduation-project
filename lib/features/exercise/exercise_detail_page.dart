@@ -13,6 +13,15 @@ class ExerciseDetailPage extends StatefulWidget {
 }
 
 class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
+  List<String>? _aiInstructions;
+  bool _loadingAnalysis = false;
+  String? _analysisError;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +39,8 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
       widget.exercise['secondary_muscles'] ??
           widget.exercise['secondaryMuscles'],
     );
-    final instructionsList = _parseInstructions(widget.exercise['instructions']);
+    final originalInstructions = _parseInstructions(widget.exercise['instructions']);
+    final instructionsList = _aiInstructions ?? originalInstructions;
     final youtubeLink = _getYoutubeLink(widget.exercise);
 
     return Scaffold(
@@ -75,12 +85,6 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
             // Muscles section
             if (primary.isNotEmpty || secondary.isNotEmpty) ...[
               _buildMusclesSection(primary, secondary, isDark),
-              const SizedBox(height: 24),
-            ],
-
-            // Instructions section (bullet points)
-            if (instructionsList.isNotEmpty) ...[
-              _buildInstructionsSection(instructionsList, isDark),
               const SizedBox(height: 24),
             ],
           ],
@@ -462,66 +466,6 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
           .toList();
     }
     return const [];
-  }
-
-  Widget _buildInstructionsSection(List<String> steps, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF38383A) : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Instructions',
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...List.generate(steps.length, (i) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: FaIcon(
-                      FontAwesomeIcons.circle,
-                      size: 8,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      steps[i],
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark
-                            ? const Color(0xFFF2F2F7)
-                            : const Color(0xFF1E293B),
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
   }
 
 

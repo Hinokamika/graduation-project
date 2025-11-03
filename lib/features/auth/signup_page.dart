@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
@@ -48,16 +49,18 @@ class _SignUpPageState extends State<SignUpPage> {
         fullName: _nameController.text.trim(),
       );
 
-      // Create/Update user_identity row in Supabase
-      try {
-        final userService = UserService();
-        await userService.createOrUpdateUserIdentityFromSignup(
-          email: _emailController.text.trim(),
-          userName: _nameController.text.trim(),
-        );
-        // Also sync any locally saved survey data if a session exists
-        await userService.syncLocalSurveyToSupabase();
-      } catch (_) {}
+      // Fire-and-forget: profile bootstrap/sync should not block signup UX
+      // It will also run again after the first login.
+      unawaited(Future(() async {
+        try {
+          final userService = UserService();
+          await userService.createOrUpdateUserIdentityFromSignup(
+            email: _emailController.text.trim(),
+            userName: _nameController.text.trim(),
+          );
+          await userService.syncLocalSurveyToSupabase();
+        } catch (_) {}
+      }));
 
       if (mounted) {
         // Show success message
@@ -68,12 +71,14 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
         );
 
-        // Navigate back to login with proper return behavior
+        // Navigate back to login with proper return behavior (don’t wait for background sync)
         if (widget.returnToPreviousOnSuccess) {
-          // Return to the existing LoginPage below us
+          // Return to the previous screen (typically Login)
           Navigator.of(context).pop();
         } else {
-          Navigator.of(context).pushReplacementNamed('/login');
+          // Stronger navigation to avoid being stuck on SignUp route
+          Navigator.of(context)
+              .pushNamedAndRemoveUntil('/login', (route) => false);
         }
       }
     } on AuthException catch (e) {

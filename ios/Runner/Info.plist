@@ -56,5 +56,12 @@
 	<string>This app reads your health data (like height, weight, steps) to personalize your experience.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>This app writes selected health data you choose to share.</string>
+	<!-- Photo/Camera permissions for meal scanning -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to analyze meals from photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We may save processed images to your photo library.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to capture meal photos.</string>
 </dict>
 </plist>
