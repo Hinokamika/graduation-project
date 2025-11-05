@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
@@ -315,7 +316,7 @@ class _RelaxPageState extends State<RelaxPage> {
         _buildActionButton(
           icon: FontAwesomeIcons.music,
           label: 'Meditate',
-          onTap: () {},
+          onTap: () => _openBreathingDialog(pattern: const _BreathPattern.box()),
           color: AppColors.primary,
           isDark: isDark,
         ),
@@ -323,7 +324,7 @@ class _RelaxPageState extends State<RelaxPage> {
         _buildActionButton(
           icon: FontAwesomeIcons.wind,
           label: 'Breathe',
-          onTap: () {},
+          onTap: () => _openBreathingDialog(pattern: const _BreathPattern.fourSevenEight()),
           color: AppColors.success,
           isDark: isDark,
         ),
@@ -704,7 +705,7 @@ class _RelaxPageState extends State<RelaxPage> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => _openBreathingDialog(pattern: const _BreathPattern.fourSevenEight()),
                 icon: const Icon(FontAwesomeIcons.play, size: 14),
                 label: const Text('Start'),
                 style: ElevatedButton.styleFrom(
@@ -718,6 +719,15 @@ class _RelaxPageState extends State<RelaxPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _openBreathingDialog({required _BreathPattern pattern}) async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _BreathingSessionDialog(pattern: pattern),
     );
   }
 
@@ -904,4 +914,202 @@ class _RelaxItem {
     required this.description,
     required this.type,
   });
+}
+
+class _BreathPattern {
+  final int inhale;
+  final int hold;
+  final int exhale;
+  final String name;
+  const _BreathPattern({required this.inhale, required this.hold, required this.exhale, required this.name});
+  const _BreathPattern.fourSevenEight() : inhale = 4, hold = 7, exhale = 8, name = '4-7-8';
+  const _BreathPattern.box() : inhale = 4, hold = 4, exhale = 4, name = 'Box';
+}
+
+class _BreathingSessionDialog extends StatefulWidget {
+  final _BreathPattern pattern;
+  final int minutes;
+  const _BreathingSessionDialog({required this.pattern, this.minutes = 1});
+
+  @override
+  State<_BreathingSessionDialog> createState() => _BreathingSessionDialogState();
+}
+
+class _BreathingSessionDialogState extends State<_BreathingSessionDialog> {
+  Timer? _timer;
+  int _step = 0; // 0=inhale,1=hold,2=exhale
+  int _secondsLeft = 0;
+  int _sessionSecondsLeft = 0;
+  bool _running = false;
+
+  int get _currentStepDuration => [widget.pattern.inhale, widget.pattern.hold, widget.pattern.exhale][_step];
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionSecondsLeft = widget.minutes * 60;
+    _startStep();
+  }
+
+  void _startStep() {
+    _timer?.cancel();
+    _running = true;
+    _secondsLeft = _currentStepDuration;
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return;
+      setState(() {
+        _secondsLeft--;
+        _sessionSecondsLeft--;
+        if (_sessionSecondsLeft <= 0) {
+          _running = false;
+          _timer?.cancel();
+        } else if (_secondsLeft <= 0) {
+          _step = (_step + 1) % 3;
+          _secondsLeft = _currentStepDuration;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String get _stepLabel => _step == 0 ? 'Inhale' : (_step == 1 ? 'Hold' : 'Exhale');
+
+  double get _progress {
+    final total = _currentStepDuration.toDouble();
+    final done = (total - _secondsLeft).clamp(0, total);
+    if (total <= 0) return 0;
+    return done / total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Dialog(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      insetPadding: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(FontAwesomeIcons.wind, color: AppColors.success, size: 16),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Guided Breathing • ${widget.pattern.name}',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: onSurface,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(FontAwesomeIcons.xmark, size: 16),
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _stepLabel,
+              style: AppTextStyles.titleMedium.copyWith(
+                color: onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${_secondsLeft}s',
+              style: AppTextStyles.titleLarge.copyWith(
+                color: onSurface,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              width: 120,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    height: 120,
+                    width: 120,
+                    child: CircularProgressIndicator(
+                      value: _running ? _progress : 0,
+                      strokeWidth: 8,
+                      valueColor: AlwaysStoppedAnimation(AppColors.success),
+                      backgroundColor: AppColors.success.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  Icon(
+                    _step == 2 ? FontAwesomeIcons.arrowDown : (_step == 0 ? FontAwesomeIcons.arrowUp : FontAwesomeIcons.pause),
+                    size: 20,
+                    color: AppColors.success,
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${(_sessionSecondsLeft / 60).floor()}m ${(_sessionSecondsLeft % 60).toString().padLeft(2, '0')}s left',
+                  style: AppTextStyles.bodySmall.copyWith(color: onSurface.withOpacity(0.7)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(FontAwesomeIcons.stop),
+                    label: const Text('Stop'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      if (_sessionSecondsLeft <= 0) {
+                        Navigator.of(context).pop();
+                      } else if (_running) {
+                        _timer?.cancel();
+                        setState(() => _running = false);
+                      } else {
+                        _startStep();
+                      }
+                    },
+                    icon: Icon(_running ? FontAwesomeIcons.pause : FontAwesomeIcons.play),
+                    label: Text(_running ? 'Pause' : 'Resume'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
