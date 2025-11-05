@@ -13,12 +13,20 @@ class CalorieAnalysisResult {
   final double totalKcal;
   final List<FoodItemEstimate> items;
   final String? reasoning;
+  final double? proteinG;
+  final double? carbsG;
+  final double? fatG;
+  final double? sugarG;
 
   const CalorieAnalysisResult({
     required this.success,
     required this.totalKcal,
     required this.items,
     this.reasoning,
+    this.proteinG,
+    this.carbsG,
+    this.fatG,
+    this.sugarG,
   });
 }
 
@@ -76,12 +84,29 @@ class CalorieAnalysisService {
       }
     }
     final reasoning = data['reasoning']?.toString();
+    // Parse optional macros
+    double? _asDouble(dynamic v) {
+      if (v == null) return null;
+      if (v is num) return v.toDouble();
+      return double.tryParse(v.toString());
+    }
+    final macros = (data['macros'] is Map)
+        ? Map<String, dynamic>.from(data['macros'] as Map)
+        : const <String, dynamic>{};
+    final proteinG = _asDouble(macros['protein_g']);
+    final carbsG = _asDouble(macros['carbs_g']);
+    final fatG = _asDouble(macros['fat_g']);
+    final sugarG = _asDouble(macros['sugar_g'] ?? macros['sugars_g']);
     final success = (json['success'] == true);
     return CalorieAnalysisResult(
       success: success,
       totalKcal: total,
       items: items,
       reasoning: reasoning,
+      proteinG: proteinG,
+      carbsG: carbsG,
+      fatG: fatG,
+      sugarG: sugarG,
     );
   }
 }

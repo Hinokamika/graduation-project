@@ -160,6 +160,16 @@ class PlanService {
         return numVal?.round();
       }
       final macros = plan['calorie_and_macros'];
+      // Helper to pick sugar value from common keys in AI response
+      dynamic _pickSugar(dynamic m) {
+        if (m is! Map) return null;
+        if (m['sugar_g'] != null) return m['sugar_g'];
+        if (m['sugars_g'] != null) return m['sugars_g'];
+        if (m['sugar'] != null) return m['sugar'];
+        if (m['sugars'] != null) return m['sugars'];
+        return null;
+      }
+      final dynamic sugarVal = (macros is Map) ? _pickSugar(macros) : null;
       final updatePayload = <String, dynamic>{
         if (firstWorkoutRow != null && firstWorkoutRow['id'] != null) 'exercise_id': firstWorkoutRow['id'],
         if (firstRelaxRow != null && firstRelaxRow['id'] != null) 'relax_id': firstRelaxRow['id'],
@@ -168,6 +178,7 @@ class PlanService {
         if (macros is Map && macros['protein_g'] != null) 'protein': _asInt(macros['protein_g']),
         if (macros is Map && macros['carbs_g'] != null) 'carbs': _asInt(macros['carbs_g']),
         if (macros is Map && macros['fat_g'] != null) 'fat': _asInt(macros['fat_g']),
+        if (sugarVal != null) 'sugar': _asInt(sugarVal),
       };
       if (existing == null) {
         await _supabase.from('user_identity').insert({

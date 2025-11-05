@@ -318,6 +318,25 @@ class _PlanResultPageState extends State<PlanResultPage> {
                 ),
               ],
             ),
+            // Sugar (optional, only if provided by response)
+            if (macros['sugar_g'] != null ||
+                macros['sugars_g'] != null ||
+                macros['sugar'] != null ||
+                macros['sugars'] != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildNutritionCard(
+                      'Sugar',
+                      '${macros['sugar_g'] ?? macros['sugars_g'] ?? macros['sugar'] ?? macros['sugars']}',
+                      'g',
+                      AppColors.info,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             if (macros['hydration_l_min'] != null) ...[
               const SizedBox(height: 12),
               _buildInfoRow(

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/utils/app_colors.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/services/health_service.dart';
+import 'package:final_project/services/nutrition_intake_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:final_project/services/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:final_project/services/calorie_analysis_service.dart';
 import 'package:final_project/utils/nutrition_calculator.dart';
+import 'package:final_project/services/nutrition_service.dart';
+import 'package:final_project/features/nutrition/nutrition_history_page.dart';
 
 class MealPage extends StatefulWidget {
   const MealPage({super.key});
@@ -23,11 +27,13 @@ class _MealPageState extends State<MealPage> {
   double _carbsG = 0;
   double _proteinG = 0;
   double _fatG = 0;
+  double _sugarG = 0;
 
   double _targetKcal = 2200;
   double _targetCarbs = 275;
   double _targetProtein = 90;
   double _targetFat = 73;
+  double _targetSugar = 50;
 
   bool _analyzingPhoto = false;
   CalorieAnalysisResult? _lastAnalysis;
@@ -37,6 +43,8 @@ class _MealPageState extends State<MealPage> {
   String? _planError;
   List<_MealDay> _mealDays = const [];
   int _selectedDayIndex = 1;
+  Timer? _midnightTimer;
+  String? _loadedDateKey;
 
   @override
   void initState() {
@@ -46,6 +54,7 @@ class _MealPageState extends State<MealPage> {
     _loadCalorieTarget();
     _loadGoalPrefs();
     _loadMealPlan();
+    _scheduleMidnightReset();
   }
 
   Future<void> _loadCalorieTarget() async {
@@ -119,40 +128,80 @@ class _MealPageState extends State<MealPage> {
   }
 
   List<Map<String, dynamic>> _parseMeals(dynamic value) {
-    if (value is String) {
+    // Accepts JSON string or List. Normalizes each entry to a Map.
+    dynamic raw = value;
+    if (raw is String) {
       try {
-        final decoded = jsonDecode(value);
-        if (decoded is List) return List<Map<String, dynamic>>.from(decoded);
-      } catch (_) {}
-      return [];
+        raw = jsonDecode(raw);
+      } catch (_) {
+        raw = [];
+      }
     }
-    if (value is List) return List<Map<String, dynamic>>.from(value);
-    return [];
+    if (raw is! List) return [];
+    // Map entries can be Map or String. Convert strings to a map with a name.
+    return raw.map<Map<String, dynamic>>((e) {
+      if (e is Map) return Map<String, dynamic>.from(e as Map);
+      return {'name': e.toString()};
+    }).toList();
   }
 
-  List<Map<String, dynamic>> _parseSnacks(dynamic value) {
-    if (value is String) {
+  List<String> _parseSnacks(dynamic value) {
+    // Snacks are typically a list of strings. Be defensive and normalize.
+    dynamic raw = value;
+    if (raw is String) {
       try {
-        final decoded = jsonDecode(value);
-        if (decoded is List) return List<Map<String, dynamic>>.from(decoded);
-      } catch (_) {}
-      return [];
+        raw = jsonDecode(raw);
+      } catch (_) {
+        raw = [];
+      }
     }
-    if (value is List) return List<Map<String, dynamic>>.from(value);
-    return [];
+    if (raw is! List) return [];
+    return raw.map((e) => e.toString()).toList();
   }
 
   Future<void> _loadTodayNutrition() async {
     try {
+      // Track current date key for day-change detection
+      final now = DateTime.now();
+      final key = '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      _loadedDateKey = key;
       final map = await HealthService().fetchTodayNutrition();
+      // Merge with any user-logged intake stored in Supabase
+      final intake = await NutritionIntakeService().getTodayTotals();
+      map['energy_kcal'] = (map['energy_kcal'] ?? 0).toDouble() + (intake['energy_kcal'] ?? 0.0);
+      map['carbs_g'] = (map['carbs_g'] ?? 0).toDouble() + (intake['carbs_g'] ?? 0.0);
+      map['protein_g'] = (map['protein_g'] ?? 0).toDouble() + (intake['protein_g'] ?? 0.0);
+      map['fat_g'] = (map['fat_g'] ?? 0).toDouble() + (intake['fat_g'] ?? 0.0);
+      map['sugar_g'] = (map['sugar_g'] ?? 0).toDouble() + (intake['sugar_g'] ?? 0.0);
       if (!mounted) return;
       setState(() {
         _energyKcal = (map['energy_kcal'] ?? 0).toDouble();
         _carbsG = (map['carbs_g'] ?? 0).toDouble();
         _proteinG = (map['protein_g'] ?? 0).toDouble();
         _fatG = (map['fat_g'] ?? 0).toDouble();
+        _sugarG = (map['sugar_g'] ?? 0).toDouble();
       });
     } catch (_) {}
+  }
+
+  void _scheduleMidnightReset() {
+    _midnightTimer?.cancel();
+    final now = DateTime.now();
+    final nextMidnight = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final duration = nextMidnight.difference(now);
+    _midnightTimer = Timer(duration, () async {
+      if (!mounted) return;
+      setState(() {
+        _energyKcal = 0;
+        _carbsG = 0;
+        _proteinG = 0;
+        _fatG = 0;
+        _sugarG = 0;
+      });
+      await _loadTodayNutrition();
+      // Schedule for the next day
+      _scheduleMidnightReset();
+    });
   }
 
   Future<void> _loadTargetsFromProfile() async {
@@ -160,22 +209,22 @@ class _MealPageState extends State<MealPage> {
       final profile = await UserService().getUserProfile();
       if (!mounted) return;
 
-      // Get nutrition goal delta from UserService
-      final delta = await UserService().getNutritionGoalDelta();
+      // Get nutrition goal and delta from UserService
+      final goal = await UserService().getNutritionGoal(); // 'lose' | 'maintain' | 'gain'
+      final delta = await UserService().getNutritionGoalDelta(); // 10 | 15 | 20
 
-      // Compute targets using NutritionCalculator
-      final targets = NutritionCalculator.computeTargetsFromSurvey(
+      // Compute targets using NutritionCalculator (already applies goal + delta)
+      final t = NutritionCalculator.computeTargetsFromSurvey(
         profile ?? {},
+        goal: goal,
+        deltaPercent: delta,
       );
 
-      // Apply delta adjustment
-      final adjustmentFactor = (100 + delta) / 100.0;
-
       setState(() {
-        _targetCarbs = (targets['carbs'] ?? 0) * adjustmentFactor;
-        _targetProtein = (targets['protein'] ?? 0) * adjustmentFactor;
-        _targetFat = (targets['fat'] ?? 0) * adjustmentFactor;
-        _targetKcal = (targets['calories'] ?? 0) * adjustmentFactor;
+        _targetCarbs = (t['carbs_g'] ?? 0).toDouble();
+        _targetProtein = (t['protein_g'] ?? 0).toDouble();
+        _targetFat = (t['fat_g'] ?? 0).toDouble();
+        _targetKcal = (t['energy_kcal'] ?? 0).toDouble();
       });
     } catch (e) {
       debugPrint('Error loading targets: $e');
@@ -302,22 +351,35 @@ class _MealPageState extends State<MealPage> {
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${calorieProgress.toStringAsFixed(0)}%',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.accent,
-                    fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${calorieProgress.toStringAsFixed(0)}%',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _showNutritionGoalDialog,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    ),
+                    icon: const Icon(FontAwesomeIcons.sliders, size: 14),
+                    label: const Text('Set Goal'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -395,7 +457,11 @@ class _MealPageState extends State<MealPage> {
               color: AppColors.accent,
               isDark: isDark,
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             _buildMacroCard(
               icon: FontAwesomeIcons.droplet,
               label: 'Fat',
@@ -405,7 +471,32 @@ class _MealPageState extends State<MealPage> {
               color: AppColors.warning,
               isDark: isDark,
             ),
+            const SizedBox(width: 12),
+            _buildMacroCard(
+              icon: FontAwesomeIcons.cubes,
+              label: 'Sugar',
+              value: _sugarG.toStringAsFixed(0),
+              target: _targetSugar.toStringAsFixed(0),
+              unit: 'g',
+              color: AppColors.info,
+              isDark: isDark,
+            ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const NutritionHistoryPage(),
+                ),
+              );
+            },
+            icon: const Icon(FontAwesomeIcons.clockRotateLeft, size: 14),
+            label: const Text('Show History'),
+          ),
         ),
       ],
     );
@@ -792,7 +883,7 @@ class _MealPageState extends State<MealPage> {
             ],
           ),
           const SizedBox(height: 10),
-          ...day.snacks.map((snack) => _buildMealItem(snack, isDark)),
+          ...day.snacks.map((snack) => _buildSnackItem(snack, isDark)),
         ],
       ],
     );
@@ -831,29 +922,92 @@ class _MealPageState extends State<MealPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['name']?.toString() ?? 'Food item',
+                  item['name']?.toString() ?? item['title']?.toString() ?? 'Food item',
                   style: AppTextStyles.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
+                // Show calories if present; otherwise show items/description when available
                 if (item['calories'] != null)
                   Text(
                     '${item['calories']} kcal',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 11,
                     ),
+                  )
+                else if (item['items'] is List && (item['items'] as List).isNotEmpty)
+                  Text(
+                    (item['items'] as List).map((e) => e.toString()).join(', '),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 11,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                else if (item['description'] != null)
+                  Text(
+                    item['description'].toString(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 11,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+          ],
+        ),
+      ),
+      Icon(
+        FontAwesomeIcons.chevronRight,
+        size: 14,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+      ),
+    ],
+  ),
+);
+}
+
+  Widget _buildSnackItem(String snack, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark
+              ? Theme.of(context).dividerColor
+              : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              FontAwesomeIcons.apple,
+              color: AppColors.warning,
+              size: 14,
             ),
           ),
-          Icon(
-            FontAwesomeIcons.chevronRight,
-            size: 14,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              snack,
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -906,7 +1060,7 @@ class _MealPageState extends State<MealPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: _analyzingPhoto ? null : _analyzeImage,
+                      onPressed: _analyzingPhoto ? null : () => _analyzeImageFromDialog(context),
                       icon: _analyzingPhoto
                           ? const SizedBox(
                               width: 16,
@@ -929,7 +1083,7 @@ class _MealPageState extends State<MealPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _deleteImage,
+                      onPressed: () => _deleteImageFromDialog(context),
                       icon: const Icon(FontAwesomeIcons.trash),
                       label: const Text('Delete'),
                       style: OutlinedButton.styleFrom(
@@ -967,7 +1121,7 @@ class _MealPageState extends State<MealPage> {
       });
 
       if (result.success) {
-        Navigator.pop(context); // Close modal
+        Navigator.pop(context); // Close preview modal
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -982,9 +1136,11 @@ class _MealPageState extends State<MealPage> {
               ],
             ),
             backgroundColor: AppColors.success,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 2),
           ),
         );
+        // Show analysis details modal
+        await _showAnalysisDetailsDialog(result);
       }
     } catch (e) {
       if (!mounted) return;
@@ -1004,11 +1160,57 @@ class _MealPageState extends State<MealPage> {
     }
   }
 
-  void _deleteImage() {
+  Future<void> _analyzeImageFromDialog(BuildContext dialogContext) async {
+    if (_selectedImage == null) return;
+    final bytes = await _selectedImage!.readAsBytes();
+    setState(() => _analyzingPhoto = true);
+    try {
+      final result = await CalorieAnalysisService.analyzeImageBytes(bytes);
+      if (!mounted) return;
+      setState(() {
+        _lastAnalysis = result;
+        _analyzingPhoto = false;
+      });
+      if (result.success) {
+        Navigator.of(dialogContext).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(FontAwesomeIcons.check, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('${result.totalKcal.toStringAsFixed(0)} kcal analyzed')),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        await _showAnalysisDetailsDialog(result);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _analyzingPhoto = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(FontAwesomeIcons.exclamation, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Analysis failed')),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  void _deleteImageFromDialog(BuildContext dialogContext) {
     setState(() {
       _selectedImage = null;
     });
-    Navigator.pop(context); // Close modal
+    Navigator.of(dialogContext).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Row(
@@ -1023,6 +1225,392 @@ class _MealPageState extends State<MealPage> {
       ),
     );
   }
+
+  Future<void> _showAnalysisDetailsDialog(CalorieAnalysisResult result) async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          title: Text(
+            'Image Analysis',
+            style: AppTextStyles.bodyLarge.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Summary
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(FontAwesomeIcons.fire, color: AppColors.success, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${result.totalKcal.toStringAsFixed(0)} kcal total',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Macros
+                if (result.carbsG != null ||
+                    result.proteinG != null ||
+                    result.fatG != null ||
+                    result.sugarG != null) ...[
+                  Text(
+                    'Estimated Macros',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      if (result.carbsG != null)
+                        _macroChip(FontAwesomeIcons.leaf, 'Carbs', result.carbsG!, AppColors.primary),
+                      if (result.proteinG != null)
+                        _macroChip(FontAwesomeIcons.bolt, 'Protein', result.proteinG!, AppColors.accent),
+                      if (result.fatG != null)
+                        _macroChip(FontAwesomeIcons.droplet, 'Fat', result.fatG!, AppColors.warning),
+                      if (result.sugarG != null)
+                        _macroChip(FontAwesomeIcons.cubes, 'Sugar', result.sugarG!, AppColors.info),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Food items
+                if (result.items.isNotEmpty) ...[
+                  Text(
+                    'Detected Items',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...result.items.map(
+                    (it) => Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.getBorder(context)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(FontAwesomeIcons.utensils, size: 14, color: AppColors.accent),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              it.name,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${it.calories.toStringAsFixed(0)} kcal',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // Reasoning
+                if ((result.reasoning ?? '').isNotEmpty) ...[
+                  Text(
+                    'Reasoning',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.getBorder(context)),
+                    ),
+                    child: Text(
+                      result.reasoning!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            if (result.success) ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  await NutritionIntakeService().addEntry(
+                    energyKcal: result.totalKcal,
+                    carbsG: result.carbsG,
+                    proteinG: result.proteinG,
+                    fatG: result.fatG,
+                    sugarG: result.sugarG,
+                    source: 'ai_analysis',
+                    metadata: {
+                      'reasoning': result.reasoning,
+                      'items': result.items.map((e) => {
+                        'name': e.name,
+                        'calories': e.calories,
+                      }).toList(),
+                    },
+                  );
+                  // Refresh today totals in UI
+                  await _loadTodayNutrition();
+                  if (!mounted) return;
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Added to Today\'s Intake')),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())),
+                  );
+                }
+              },
+              icon: const Icon(FontAwesomeIcons.plus),
+              label: const Text("Add to Today's Intake"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _macroChip(IconData icon, String label, double value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ${value.toStringAsFixed(0)}g',
+            style: AppTextStyles.bodySmall.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showNutritionGoalDialog() async {
+    final us = UserService();
+    final currentGoal = await us.getNutritionGoal();
+    final currentDelta = await us.getNutritionGoalDelta();
+    final currentKcal = await us.getCaloriesTarget();
+
+    String goal = currentGoal; // 'lose' | 'maintain' | 'gain'
+    int delta = currentDelta; // 10/15/20
+    final kcController = TextEditingController(text: currentKcal.toString());
+    // Pre-fill macros with current targets
+    final carbsController = TextEditingController(text: _targetCarbs.toStringAsFixed(0));
+    final proteinController = TextEditingController(text: _targetProtein.toStringAsFixed(0));
+    final fatController = TextEditingController(text: _targetFat.toStringAsFixed(0));
+    final sugarController = TextEditingController(text: _targetSugar.toStringAsFixed(0));
+
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocalState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              title: Text(
+                'Nutrition Goal',
+                style: AppTextStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                  // Calories
+                  TextField(
+                    controller: kcController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(FontAwesomeIcons.fire, size: 14),
+                      labelText: 'Daily Calories Target (kcal)',
+                      hintText: 'e.g., 2200',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Macros
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: carbsController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(FontAwesomeIcons.breadSlice, size: 14),
+                            labelText: 'Carbs (g)',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: proteinController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(FontAwesomeIcons.egg, size: 14),
+                            labelText: 'Protein (g)',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: fatController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(FontAwesomeIcons.droplet, size: 14),
+                      labelText: 'Fat (g)',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: sugarController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(FontAwesomeIcons.cubes, size: 14),
+                      labelText: 'Sugar (g)',
+                    ),
+                  ),
+                  // (Show History moved out of modal to main page under macros)
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await us.setNutritionGoal(goal);
+                    await us.setNutritionGoalDelta(delta);
+                    final kcal = int.tryParse(kcController.text.trim());
+                    if (kcal != null && kcal > 0) {
+                      await us.setCaloriesTarget(kcal);
+                    }
+                    // Persist to Supabase history
+                    final carbs = double.tryParse(carbsController.text.trim());
+                    final protein = double.tryParse(proteinController.text.trim());
+                    final fat = double.tryParse(fatController.text.trim());
+                    try {
+                      await NutritionService().saveGoalEntry(
+                        goal: goal,
+                        deltaPercent: delta,
+                        caloriesTarget: kcal,
+                        carbsG: carbs,
+                        proteinG: protein,
+                        fatG: fat,
+                        sugarG: double.tryParse(sugarController.text.trim()),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    // Refresh targets
+                    await _loadTargetsFromProfile();
+                    await _loadCalorieTarget();
+                    // Update on-screen targets with manual macros if provided
+                    setState(() {
+                      if (carbs != null) _targetCarbs = carbs;
+                      if (protein != null) _targetProtein = protein;
+                      if (fat != null) _targetFat = fat;
+                      if (kcal != null) _targetKcal = kcal.toDouble();
+                      final sugar = double.tryParse(sugarController.text.trim());
+                      if (sugar != null) _targetSugar = sugar;
+                    });
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Nutrition goal saved')),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _deleteImage() {
+    // Legacy path: if invoked without dialog context, just clear selection.
+    setState(() {
+      _selectedImage = null;
+    });
+  }
+
+  @override
+  void dispose() {
+    _midnightTimer?.cancel();
+    super.dispose();
+  }
 }
 
 class _MealDay {
@@ -1030,7 +1618,7 @@ class _MealDay {
   final int dayIndex;
   final String dayLabel;
   final List<Map<String, dynamic>> meals;
-  final List<Map<String, dynamic>> snacks;
+  final List<String> snacks;
 
   _MealDay({
     this.id,

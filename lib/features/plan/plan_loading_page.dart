@@ -14,6 +14,7 @@ class PlanLoadingPage extends StatefulWidget {
 
 class _PlanLoadingPageState extends State<PlanLoadingPage> {
   String? _error;
+  static const Duration _minLoadingDuration = Duration(seconds: 3);
 
   @override
   void initState() {
@@ -23,6 +24,7 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
 
   Future<void> _start() async {
     setState(() => _error = null);
+    final startTime = DateTime.now();
     try {
       final payload = _buildPayload(widget.survey);
       final plan = await HealthcareMcpApi.generatePlan(
@@ -33,6 +35,11 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
         dietType: payload['diet_type'] as String,
         fitnessLevel: payload['fitness_level'] as String,
       );
+      // Ensure a minimum loading time for better UX / AI response feel
+      final elapsed = DateTime.now().difference(startTime);
+      if (elapsed < _minLoadingDuration) {
+        await Future.delayed(_minLoadingDuration - elapsed);
+      }
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
