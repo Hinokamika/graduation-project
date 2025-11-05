@@ -160,10 +160,6 @@ class _RelaxPageState extends State<RelaxPage> {
               _buildMoodTracker(isDark),
               const SizedBox(height: 24),
 
-              // Relax Sessions
-              _buildRelaxSessions(isDark),
-              const SizedBox(height: 24),
-
               // Breathing Exercise
               _buildBreathingExercise(isDark),
               const SizedBox(height: 24),

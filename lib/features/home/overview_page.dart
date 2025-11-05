@@ -8,9 +8,12 @@ import 'providers/health_data_provider.dart';
 import 'widgets/health_summary_grid.dart';
 import 'widgets/target_edit_modal.dart';
 import 'models/health_metrics.dart';
+import 'package:final_project/features/nutrition/meal_page.dart';
+import 'package:final_project/features/exercise/exercise_page.dart';
 
 class OverviewPage extends StatefulWidget {
-  const OverviewPage({super.key});
+  final ValueChanged<int>? onNavigateTab; // 0=Overview,1=Workout,2=Chat,3=Meal,4=Relax
+  const OverviewPage({super.key, this.onNavigateTab});
 
   @override
   State<OverviewPage> createState() => _OverviewPageState();
@@ -19,6 +22,7 @@ class OverviewPage extends StatefulWidget {
 class _OverviewPageState extends State<OverviewPage> {
   late final HealthDataProvider _provider;
   String? _displayName;
+  int _workoutDayIndex = 1;
 
   @override
   void initState() {
@@ -30,6 +34,7 @@ class _OverviewPageState extends State<OverviewPage> {
 
     // Load user name from Supabase user_identity (via UserService)
     _loadUserName();
+    _loadWorkoutDayIndex();
   }
 
   @override
@@ -37,6 +42,13 @@ class _OverviewPageState extends State<OverviewPage> {
     _provider.removeListener(_onProviderChanged);
     _provider.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadWorkoutDayIndex() async {
+    try {
+      final idx = await UserService().getWorkoutCurrentDayIndex();
+      if (mounted) setState(() => _workoutDayIndex = idx);
+    } catch (_) {}
   }
 
   void _onProviderChanged() {
@@ -93,6 +105,8 @@ class _OverviewPageState extends State<OverviewPage> {
                   _buildWelcomeSection(context),
                   const SizedBox(height: 24),
                   _buildTodaySummary(context, _provider),
+                  const SizedBox(height: 24),
+                  _buildPlanShortcuts(context, _provider),
                   const SizedBox(height: 24),
                   _buildHealthMetrics(context, _provider),
                 ],
@@ -371,6 +385,131 @@ class _OverviewPageState extends State<OverviewPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPlanShortcuts(BuildContext context, HealthDataProvider provider) {
+    final overview = provider.overview!;
+    final kcal = (overview.metrics.calories ?? 0).round();
+    final kcalTarget = overview.targets.caloriesTarget;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Today\'s Plan', style: AppTextStyles.subtitle),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: EnhancedCard(
+                onTap: () {
+                  // Switch bottom tab to Meal (index 3)
+                  widget.onNavigateTab?.call(3);
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const FaIcon(FontAwesomeIcons.utensils, color: AppColors.accent, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Meal Plan Overview',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.getTextSecondary(context),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '$kcal / $kcalTarget kcal',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.getTextPrimary(context),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tap to open Meal page',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.getTextTertiary(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: EnhancedCard(
+                onTap: () {
+                  // Switch bottom tab to Workout (index 1)
+                  widget.onNavigateTab?.call(1);
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const FaIcon(FontAwesomeIcons.dumbbell, color: AppColors.primary, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Today's Workout",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.getTextSecondary(context),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Day $_workoutDayIndex',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        color: AppColors.getTextPrimary(context),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tap to open Workout',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.getTextTertiary(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

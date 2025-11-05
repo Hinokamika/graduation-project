@@ -20,14 +20,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  late List<Widget> _pages;
 
-  final List<Widget> _pages = [
-    const OverviewPage(),
-    const ExercisePage(),
-    const ChatPage(),
-    const MealPage(),
-    const RelaxPage(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      OverviewPage(
+        onNavigateTab: (i) {
+          if (i < 0 || i > 4) return;
+          setState(() => _currentIndex = i);
+        },
+      ),
+      const ExercisePage(),
+      const ChatPage(),
+      const MealPage(),
+      const RelaxPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
