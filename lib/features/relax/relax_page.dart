@@ -21,9 +21,7 @@ class _RelaxPageState extends State<RelaxPage> {
   String? _planError;
   List<_RelaxDay> _days = const [];
   int _selectedDayIndex = 1;
-  String _selectedMood = 'calm';
-  double _sleepHours = 7.5;
-  String _sleepQuality = 'good';
+  // Removed mood/sleep state after simplifying UI
 
   @override
   void initState() {
@@ -152,24 +150,13 @@ class _RelaxPageState extends State<RelaxPage> {
               _buildWellnessStats(isDark),
               const SizedBox(height: 24),
 
-              // Quick Actions
-              _buildQuickActions(isDark),
-              const SizedBox(height: 24),
-
-              // Mood Tracker
-              _buildMoodTracker(isDark),
+              // Relax Sessions
+              _buildRelaxSessions(isDark),
               const SizedBox(height: 24),
 
               // Breathing Exercise
               _buildBreathingExercise(isDark),
               const SizedBox(height: 24),
-
-              // Sleep Tracker
-              _buildSleepTracker(isDark),
-              const SizedBox(height: 24),
-
-              // Wellness Tips
-              _buildWellnessTips(isDark),
             ],
           ),
         ),
@@ -303,150 +290,6 @@ class _RelaxPageState extends State<RelaxPage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildQuickActions(bool isDark) {
-    return Row(
-      children: [
-        _buildActionButton(
-          icon: FontAwesomeIcons.music,
-          label: 'Meditate',
-          onTap: () => _openBreathingDialog(pattern: const _BreathPattern.box()),
-          color: AppColors.primary,
-          isDark: isDark,
-        ),
-        const SizedBox(width: 12),
-        _buildActionButton(
-          icon: FontAwesomeIcons.wind,
-          label: 'Breathe',
-          onTap: () => _openBreathingDialog(pattern: const _BreathPattern.fourSevenEight()),
-          color: AppColors.success,
-          isDark: isDark,
-        ),
-        const SizedBox(width: 12),
-        _buildActionButton(
-          icon: FontAwesomeIcons.water,
-          label: 'Hydrate',
-          onTap: () {},
-          color: AppColors.accent,
-          isDark: isDark,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: color.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMoodTracker(bool isDark) {
-    const moods = ['😊 Happy', '😌 Calm', '😔 Sad', '😤 Angry', '😴 Tired'];
-    const moodColors = [
-      AppColors.success,
-      AppColors.primary,
-      AppColors.accent,
-      AppColors.warning,
-      AppColors.error,
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                FontAwesomeIcons.smile,
-                color: AppColors.warning,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'How are you feeling?',
-              style: AppTextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: List.generate(moods.length, (index) {
-            return GestureDetector(
-              onTap: () => setState(() => _selectedMood = moods[index]),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: _selectedMood == moods[index]
-                      ? moodColors[index].withValues(alpha: 0.2)
-                      : (isDark ? const Color(0xFF2C2C2E) : Colors.white),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _selectedMood == moods[index]
-                        ? moodColors[index]
-                        : (isDark ? Theme.of(context).dividerColor : const Color(0xFFE2E8F0)),
-                    width: _selectedMood == moods[index] ? 2 : 1,
-                  ),
-                ),
-                child: Text(
-                  moods[index],
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
     );
   }
 
@@ -724,164 +567,6 @@ class _RelaxPageState extends State<RelaxPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => _BreathingSessionDialog(pattern: pattern),
-    );
-  }
-
-  Widget _buildSleepTracker(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                FontAwesomeIcons.moon,
-                color: AppColors.primary,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Sleep Quality',
-              style: AppTextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? Theme.of(context).dividerColor : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Last night',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_sleepHours.toStringAsFixed(1)} hours',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Quality: $_sleepQuality',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              Icon(
-                FontAwesomeIcons.bedPulse,
-                size: 48,
-                color: AppColors.primary.withValues(alpha: 0.3),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWellnessTips(bool isDark) {
-    const tips = [
-      'Take short breaks every hour to stretch',
-      'Stay hydrated throughout the day',
-      'Practice gratitude meditation daily',
-      'Limit screen time before bedtime',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                FontAwesomeIcons.lightbulb,
-                color: AppColors.warning,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Wellness Tips',
-              style: AppTextStyles.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ...tips.map((tip) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? Theme.of(context).dividerColor : const Color(0xFFE2E8F0),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    FontAwesomeIcons.check,
-                    color: AppColors.warning,
-                    size: 12,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    tip,
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        )).toList(),
-      ],
     );
   }
 }

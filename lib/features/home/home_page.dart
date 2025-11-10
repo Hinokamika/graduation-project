@@ -141,40 +141,6 @@ class _HomePageState extends State<HomePage> {
                 tooltip: 'Toggle Theme',
               ),
 
-              // Notifications
-              Stack(
-                children: [
-                  IconButton(
-                    icon: const FaIcon(
-                      FontAwesomeIcons.bell,
-                      size: 22,
-                    ),
-                    onPressed: () {
-                      // Handle notifications
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Notifications feature coming soon!'),
-                          backgroundColor: AppColors.accent,
-                        ),
-                      );
-                    },
-                    tooltip: 'Notifications',
-                  ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(width: 8),
 
               // User Profile Button

@@ -58,13 +58,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 32),
 
-            // App Preferences
-            _buildSectionTitle('App Preferences'),
-            const SizedBox(height: 16),
-            _buildAppPreferences(),
-
-            const SizedBox(height: 32),
-
             // Danger Zone
             _buildSectionTitle('Danger Zone'),
             const SizedBox(height: 16),

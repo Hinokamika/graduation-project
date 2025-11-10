@@ -1162,8 +1162,14 @@ class _MealPageState extends State<MealPage> {
 
   Future<void> _analyzeImageFromDialog(BuildContext dialogContext) async {
     if (_selectedImage == null) return;
-    final bytes = await _selectedImage!.readAsBytes();
+    // Start analyzing and close the preview dialog immediately so
+    // the main page can show the loading animation/state.
     setState(() => _analyzingPhoto = true);
+    // Close the preview dialog now to reveal the loading state on the page
+    if (Navigator.of(dialogContext).canPop()) {
+      Navigator.of(dialogContext).pop();
+    }
+    final bytes = await _selectedImage!.readAsBytes();
     try {
       final result = await CalorieAnalysisService.analyzeImageBytes(bytes);
       if (!mounted) return;
@@ -1172,7 +1178,6 @@ class _MealPageState extends State<MealPage> {
         _analyzingPhoto = false;
       });
       if (result.success) {
-        Navigator.of(dialogContext).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -1234,7 +1239,7 @@ class _MealPageState extends State<MealPage> {
         return AlertDialog(
           backgroundColor: Theme.of(context).colorScheme.surface,
           title: Text(
-            'Image Analysis',
+            'Meal Analysis',
             style: AppTextStyles.bodyLarge.copyWith(
               fontWeight: FontWeight.w700,
               color: Theme.of(context).colorScheme.onSurface,
@@ -1255,16 +1260,24 @@ class _MealPageState extends State<MealPage> {
                       color: AppColors.success.withValues(alpha: 0.2),
                     ),
                   ),
-                  child: Row(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      const Icon(FontAwesomeIcons.fire, color: AppColors.success, size: 16),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${result.totalKcal.toStringAsFixed(0)} kcal total',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(FontAwesomeIcons.fire, color: AppColors.success, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${result.totalKcal.toStringAsFixed(0)} kcal total',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1275,7 +1288,10 @@ class _MealPageState extends State<MealPage> {
                 if (result.carbsG != null ||
                     result.proteinG != null ||
                     result.fatG != null ||
-                    result.sugarG != null) ...[
+                    result.sugarG != null ||
+                    result.fiberG != null ||
+                    result.sodiumMg != null ||
+                    result.saturatedFatG != null) ...[
                   Text(
                     'Estimated Macros',
                     style: AppTextStyles.bodyMedium.copyWith(
@@ -1296,6 +1312,12 @@ class _MealPageState extends State<MealPage> {
                         _macroChip(FontAwesomeIcons.droplet, 'Fat', result.fatG!, AppColors.warning),
                       if (result.sugarG != null)
                         _macroChip(FontAwesomeIcons.cubes, 'Sugar', result.sugarG!, AppColors.info),
+                      if (result.fiberG != null)
+                        _macroChip(FontAwesomeIcons.leaf, 'Fiber', result.fiberG!, AppColors.success),
+                      if (result.saturatedFatG != null)
+                        _macroChip(FontAwesomeIcons.egg, 'Sat. Fat', result.saturatedFatG!, AppColors.error),
+                      if (result.sodiumMg != null)
+                        _macroChip(FontAwesomeIcons.water, 'Sodium', result.sodiumMg!, AppColors.calories, unit: 'mg'),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1320,57 +1342,67 @@ class _MealPageState extends State<MealPage> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppColors.getBorder(context)),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(FontAwesomeIcons.utensils, size: 14, color: AppColors.accent),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              it.name,
+                          Row(
+                            children: [
+                              const Icon(FontAwesomeIcons.utensils, size: 14, color: AppColors.accent),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  it.name,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                '${it.calories.toStringAsFixed(0)} kcal',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if ((it.portionSize ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              'Portion: ${it.portionSize}',
                               style: AppTextStyles.bodySmall.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                               ),
                             ),
-                          ),
-                          Text(
-                            '${it.calories.toStringAsFixed(0)} kcal',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          ],
+                          if (it.macros != null) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                if (it.macros!.carbsG != null)
+                                  _macroChip(FontAwesomeIcons.leaf, 'Carbs', it.macros!.carbsG!, AppColors.primary),
+                                if (it.macros!.proteinG != null)
+                                  _macroChip(FontAwesomeIcons.bolt, 'Protein', it.macros!.proteinG!, AppColors.accent),
+                                if (it.macros!.fatG != null)
+                                  _macroChip(FontAwesomeIcons.droplet, 'Fat', it.macros!.fatG!, AppColors.warning),
+                                if (it.macros!.sugarG != null)
+                                  _macroChip(FontAwesomeIcons.cubes, 'Sugar', it.macros!.sugarG!, AppColors.info),
+                                if (it.macros!.fiberG != null)
+                                  _macroChip(FontAwesomeIcons.leaf, 'Fiber', it.macros!.fiberG!, AppColors.success),
+                                if (it.macros!.saturatedFatG != null)
+                                  _macroChip(FontAwesomeIcons.egg, 'Sat. Fat', it.macros!.saturatedFatG!, AppColors.error),
+                                if (it.macros!.sodiumMg != null)
+                                  _macroChip(FontAwesomeIcons.water, 'Sodium', it.macros!.sodiumMg!, AppColors.calories, unit: 'mg'),
+                              ],
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                ],
-
-                // Reasoning
-                if ((result.reasoning ?? '').isNotEmpty) ...[
-                  Text(
-                    'Reasoning',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.getBorder(context)),
-                    ),
-                    child: Text(
-                      result.reasoning!,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
                 ],
               ],
             ),
@@ -1388,9 +1420,34 @@ class _MealPageState extends State<MealPage> {
                     source: 'ai_analysis',
                     metadata: {
                       'reasoning': result.reasoning,
+                      if ((result.confidenceLevel ?? '').isNotEmpty)
+                        'confidence_level': result.confidenceLevel,
+                      if (result.mealQuality != null) 'meal_quality': {
+                        if (result.mealQuality!.balanceScore != null) 'balance_score': result.mealQuality!.balanceScore,
+                        if ((result.mealQuality!.notes ?? '').isNotEmpty) 'notes': result.mealQuality!.notes,
+                      },
+                      'macros': {
+                        if (result.carbsG != null) 'carbs_g': result.carbsG,
+                        if (result.proteinG != null) 'protein_g': result.proteinG,
+                        if (result.fatG != null) 'fat_g': result.fatG,
+                        if (result.sugarG != null) 'sugar_g': result.sugarG,
+                        if (result.fiberG != null) 'fiber_g': result.fiberG,
+                        if (result.saturatedFatG != null) 'saturated_fat_g': result.saturatedFatG,
+                        if (result.sodiumMg != null) 'sodium_mg': result.sodiumMg,
+                      },
                       'items': result.items.map((e) => {
                         'name': e.name,
                         'calories': e.calories,
+                        if ((e.portionSize ?? '').isNotEmpty) 'portion_size': e.portionSize,
+                        if (e.macros != null) 'macros': {
+                          if (e.macros!.carbsG != null) 'carbs_g': e.macros!.carbsG,
+                          if (e.macros!.proteinG != null) 'protein_g': e.macros!.proteinG,
+                          if (e.macros!.fatG != null) 'fat_g': e.macros!.fatG,
+                          if (e.macros!.sugarG != null) 'sugar_g': e.macros!.sugarG,
+                          if (e.macros!.fiberG != null) 'fiber_g': e.macros!.fiberG,
+                          if (e.macros!.saturatedFatG != null) 'saturated_fat_g': e.macros!.saturatedFatG,
+                          if (e.macros!.sodiumMg != null) 'sodium_mg': e.macros!.sodiumMg,
+                        },
                       }).toList(),
                     },
                   );
@@ -1421,7 +1478,7 @@ class _MealPageState extends State<MealPage> {
     );
   }
 
-  Widget _macroChip(IconData icon, String label, double value, Color color) {
+  Widget _macroChip(IconData icon, String label, double value, Color color, {String unit = 'g', int decimals = 0}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -1435,7 +1492,7 @@ class _MealPageState extends State<MealPage> {
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 6),
           Text(
-            '$label: ${value.toStringAsFixed(0)}g',
+            '$label: ${value.toStringAsFixed(decimals)}$unit',
             style: AppTextStyles.bodySmall.copyWith(color: color),
           ),
         ],

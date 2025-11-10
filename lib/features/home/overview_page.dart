@@ -107,8 +107,6 @@ class _OverviewPageState extends State<OverviewPage> {
                   _buildTodaySummary(context, _provider),
                   const SizedBox(height: 24),
                   _buildPlanShortcuts(context, _provider),
-                  const SizedBox(height: 24),
-                  _buildHealthMetrics(context, _provider),
                 ],
               ),
             ),
