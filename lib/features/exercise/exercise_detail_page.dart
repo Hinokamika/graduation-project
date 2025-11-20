@@ -22,7 +22,6 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
     super.initState();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -39,7 +38,9 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
       widget.exercise['secondary_muscles'] ??
           widget.exercise['secondaryMuscles'],
     );
-    final originalInstructions = _parseInstructions(widget.exercise['instructions']);
+    final originalInstructions = _parseInstructions(
+      widget.exercise['instructions'],
+    );
     final instructionsList = _aiInstructions ?? originalInstructions;
     final youtubeLink = _getYoutubeLink(widget.exercise);
 
@@ -82,6 +83,11 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
               const SizedBox(height: 24),
             ],
 
+            if (instructionsList.isNotEmpty) ...[
+              _buildInstructionsSection(instructionsList, isDark),
+              const SizedBox(height: 24),
+            ],
+
             // Muscles section
             if (primary.isNotEmpty || secondary.isNotEmpty) ...[
               _buildMusclesSection(primary, secondary, isDark),
@@ -95,9 +101,7 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
 
   // ---- YouTube helpers ----
   String? _getYoutubeLink(Map<String, dynamic> ex) {
-    final candidates = [
-      ex['youtube_link'],
-    ];
+    final candidates = [ex['youtube_link']];
     for (final c in candidates) {
       if (c is String && c.trim().isNotEmpty) {
         final s = c.trim();
@@ -178,13 +182,13 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
                       ),
                     )
                   else
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(999),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      padding: const EdgeInsets.all(10),
                     ),
-                    padding: const EdgeInsets.all(10),
-                  ),
                 ],
               ),
             ),
@@ -454,9 +458,73 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
     );
   }
 
+  Widget _buildInstructionsSection(List<String> steps, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF38383A) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Instructions',
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(steps.length, (i) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: FaIcon(
+                      FontAwesomeIcons.circle,
+                      size: 8,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      steps[i],
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark
+                            ? const Color(0xFFF2F2F7)
+                            : const Color(0xFF1E293B),
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   List<String> _parseInstructions(dynamic raw) {
     if (raw is List) {
-      return raw.whereType<String>().map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      return raw
+          .whereType<String>()
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
     }
     if (raw is String) {
       return raw
@@ -467,7 +535,6 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
     }
     return const [];
   }
-
 
   void _addToPlan(BuildContext context, String name) {
     ScaffoldMessenger.of(context).showSnackBar(
