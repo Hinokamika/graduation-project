@@ -52,9 +52,9 @@ void main() async {
       await UserService().startSyncListeners();
       // Ask for Apple Health permissions on first launch (iOS only)
       await UserService().requestHealthPermissionsAtFirstLaunch();
-      // Debug: print Hive box info at startup in debug builds
+      // Debug: print storage box info at startup in debug builds
       if (kDebugMode) {
-        await UserService().debugPrintHiveInfo();
+        await UserService().debugPrintStorageInfo();
       }
       runApp(const MyApp());
     },

@@ -8,11 +8,10 @@ import 'providers/health_data_provider.dart';
 import 'widgets/health_summary_grid.dart';
 import 'widgets/target_edit_modal.dart';
 import 'models/health_metrics.dart';
-import 'package:final_project/features/nutrition/meal_page.dart';
-import 'package:final_project/features/exercise/exercise_page.dart';
 
 class OverviewPage extends StatefulWidget {
-  final ValueChanged<int>? onNavigateTab; // 0=Overview,1=Workout,2=Chat,3=Meal,4=Relax
+  final ValueChanged<int>?
+  onNavigateTab; // 0=Overview,1=Workout,2=Chat,3=Meal,4=Relax
   const OverviewPage({super.key, this.onNavigateTab});
 
   @override
@@ -386,7 +385,10 @@ class _OverviewPageState extends State<OverviewPage> {
     );
   }
 
-  Widget _buildPlanShortcuts(BuildContext context, HealthDataProvider provider) {
+  Widget _buildPlanShortcuts(
+    BuildContext context,
+    HealthDataProvider provider,
+  ) {
     final overview = provider.overview!;
     final kcal = (overview.metrics.calories ?? 0).round();
     final kcalTarget = overview.targets.caloriesTarget;
@@ -415,7 +417,11 @@ class _OverviewPageState extends State<OverviewPage> {
                             color: AppColors.accent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const FaIcon(FontAwesomeIcons.utensils, color: AppColors.accent, size: 18),
+                          child: const FaIcon(
+                            FontAwesomeIcons.utensils,
+                            color: AppColors.accent,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -470,7 +476,11 @@ class _OverviewPageState extends State<OverviewPage> {
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const FaIcon(FontAwesomeIcons.dumbbell, color: AppColors.primary, size: 18),
+                          child: const FaIcon(
+                            FontAwesomeIcons.dumbbell,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(

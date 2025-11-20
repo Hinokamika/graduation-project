@@ -4,16 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 
-/// MongoDB service for simple read operations.
-///
-/// Reads `MONGO_URL` (or `MONGO_URI`) and `MONGO_DB` from `.env` and exposes:
-/// - `getAll()`          → fetch every document in the collection
-/// - `getByName(name)`   → fetch documents where `name` matches (case-insensitive)
-///
-/// Notes:
-/// - This uses a single shared connection per app process.
-/// - For security, avoid bundling production DB credentials in client apps.
-/// - mongo_dart is not supported on Flutter Web. Guard usage accordingly.
 class MongoService {
   MongoService({required this.collectionName});
 
@@ -73,12 +63,6 @@ class MongoService {
     }
   }
 
-  /// Insert `dbName` into a Mongo URI if it has no path segment.
-  ///
-  /// Examples:
-  /// - input: `mongodb+srv://host/?retryWrites=true` + `mydb`
-  ///   → `mongodb+srv://host/mydb?retryWrites=true`
-  /// - input already has db → unchanged
   static String _injectDbNameIfMissing(String uri, String dbName) {
     if (dbName.isEmpty) return uri;
     // Detect an existing path segment after the host (before '?')

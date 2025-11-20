@@ -30,9 +30,11 @@ class NutritionService {
       await _supabase.from('nutrition_goal_history').insert(payload);
     } on PostgrestException catch (e) {
       final code = e.code ?? '';
-      final msg = e.message ?? '';
+      final msg = e.message;
       // If column sugar_g doesn't exist in schema, retry without it and warn.
-      if (code == 'PGRST204' || msg.contains("sugar_g") || msg.contains("Could not find the 'sugar_g' column")) {
+      if (code == 'PGRST204' ||
+          msg.contains("sugar_g") ||
+          msg.contains("Could not find the 'sugar_g' column")) {
         final fallback = Map<String, dynamic>.from(payload)..remove('sugar_g');
         try {
           await _supabase.from('nutrition_goal_history').insert(fallback);
@@ -68,7 +70,8 @@ class NutritionService {
           'create policy "Insert own" on public.nutrition_goal_history for insert with check (auth.uid() = user_id);',
         );
       }
-      if (msg.contains('row-level security') || msg.toLowerCase().contains('rls')) {
+      if (msg.contains('row-level security') ||
+          msg.toLowerCase().contains('rls')) {
         throw Exception(
           'RLS prevented writing to nutrition_goal_history. Ensure policies allow authenticated users to insert/select.\n'
           'Owner-based example policies:\n'
@@ -88,27 +91,33 @@ class NutritionService {
       try {
         final resp = await _supabase
             .from('nutrition_goal_history')
-            .select('id, calories_target, carbs_g, protein_g, fat_g, sugar_g, created_at')
+            .select(
+              'id, calories_target, carbs_g, protein_g, fat_g, sugar_g, created_at',
+            )
             .eq('user_id', user.id)
             .order('created_at', ascending: false);
         if (resp is List) {
-          return resp.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+          return resp
+              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+              .toList();
         }
-        return [];
       } on PostgrestException catch (e) {
         // Fallback if sugar_g column doesn't exist
         final code = e.code ?? '';
-        final msg = e.message ?? '';
+        final msg = e.message;
         if (code == 'PGRST204' || msg.contains('sugar_g')) {
           final resp = await _supabase
               .from('nutrition_goal_history')
-              .select('id, goal, delta_percent, calories_target, carbs_g, protein_g, fat_g, created_at')
+              .select(
+                'id, goal, delta_percent, calories_target, carbs_g, protein_g, fat_g, created_at',
+              )
               .eq('user_id', user.id)
               .order('created_at', ascending: false);
           if (resp is List) {
-            return resp.map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e)).toList();
+            return resp
+                .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+                .toList();
           }
-          return [];
         }
         rethrow;
       }

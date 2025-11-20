@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'connectivity_service.dart';
 import 'package:flutter/foundation.dart'
@@ -27,9 +26,12 @@ class UserService {
   static const String _applyTargetsToTodayKey =
       'apply_targets_to_today'; // bool
   // Workout weekly progress
-  static const String _workoutCurrentDayIndexKey = 'workout_current_day_index'; // int (1-based)
+  static const String _workoutCurrentDayIndexKey =
+      'workout_current_day_index'; // int (1-based)
 
-  Box? _userBox;
+  // Replacement for Hive Box
+  static final _MemoryBox _userBox = _MemoryBox(_userBoxName);
+
   final SupabaseClient _supabase = Supabase.instance.client;
   static bool _listenersStarted = false;
   StreamSubscription<bool>? _connSub;
@@ -40,26 +42,17 @@ class UserService {
   }
 
   Future<void> _initHive() async {
-    try {
-      await Hive.initFlutter();
-      _userBox = await Hive.openBox(_userBoxName);
-    } catch (e) {
-      print('Error initializing Hive: $e');
-    }
+    // No-op for memory box
   }
 
-  Future<Box> get _getUserBox async {
-    if (_userBox == null) {
-      await _initHive();
-    }
-    return _userBox!;
+  _MemoryBox get _getUserBox {
+    return _userBox;
   }
 
   // Start background sync listeners for auth and connectivity
   Future<void> startSyncListeners() async {
     if (_listenersStarted) return;
     _listenersStarted = true;
-    await _initHive();
 
     // Connectivity changes
     _connSub = ConnectivityService().onlineChanges.listen((isOnline) async {
@@ -80,7 +73,7 @@ class UserService {
     // Only request on iOS devices (not web, not Android)
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
     try {
-      final box = await _getUserBox;
+      final box = _getUserBox;
       final prompted =
           box.get(_healthPermissionPromptedKey, defaultValue: false) == true;
       if (prompted) return;
@@ -93,7 +86,7 @@ class UserService {
       await box.put(_healthPermissionPromptedKey, true);
     } catch (e) {
       try {
-        final box = await _getUserBox;
+        final box = _getUserBox;
         await box.put(_healthPermissionPromptedKey, true);
       } catch (_) {}
       print('Health permission prompt error: $e');
@@ -107,7 +100,7 @@ class UserService {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      final box = await _getUserBox;
+      final box = _getUserBox;
       final isDirty = box.get(_surveyDirtyKey, defaultValue: false) == true;
       final hasLocalSurvey = box.get('survey_data') != null;
       if (!isDirty && !hasLocalSurvey) return;
@@ -121,7 +114,7 @@ class UserService {
   Future<bool> isOnboardingComplete() async {
     // Check local storage as fast path
     try {
-      final box = await _getUserBox;
+      final box = _getUserBox;
       final localComplete = box.get(_onboardingKey, defaultValue: false);
       if (localComplete == true) return true;
     } catch (e) {
@@ -145,7 +138,7 @@ class UserService {
 
   // Mark onboarding as complete (local flag)
   Future<void> markOnboardingComplete() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_onboardingKey, true);
   }
 
@@ -157,7 +150,7 @@ class UserService {
   }) async {
     try {
       // Prefer linking the row created during survey by stored id
-      final box = await _getUserBox;
+      final box = _getUserBox;
       final existingLocalId = box.get(_userIdentityIdKey) as int?;
       if (existingLocalId != null) {
         await _supabase
@@ -224,14 +217,14 @@ class UserService {
 
   // ---- Workout progress (local) ----
   Future<int> getWorkoutCurrentDayIndex() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final idx = box.get(_workoutCurrentDayIndexKey, defaultValue: 1);
     if (idx is int && idx >= 1) return idx;
     return 1;
   }
 
   Future<void> setWorkoutCurrentDayIndex(int index) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_workoutCurrentDayIndexKey, index < 1 ? 1 : index);
   }
 
@@ -239,7 +232,7 @@ class UserService {
   Future<void> saveSurveyData(Map<String, dynamic> surveyData) async {
     try {
       // Persist locally for offline reads
-      final box = await _getUserBox;
+      final box = _getUserBox;
       await box.put('survey_data', surveyData);
       await box.put(_onboardingKey, true);
       await box.put(_surveyDirtyKey, true);
@@ -320,7 +313,7 @@ class UserService {
       final user = _supabase.auth.currentUser;
       if (user == null) return; // requires authenticated session
 
-      final box = await _getUserBox;
+      final box = _getUserBox;
       final surveyData = box.get('survey_data');
       if (surveyData == null) return; // nothing to sync
 
@@ -387,7 +380,7 @@ class UserService {
 
   // Get user profile data (Supabase first, fallback to local)
   Future<Map<String, dynamic>?> getUserProfile() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     try {
       Map<String, dynamic>? row;
 
@@ -462,23 +455,23 @@ class UserService {
 
   // Clear local user data (for logout)
   Future<void> clearLocalData() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.clear();
   }
 
   // Nutrition goal preferences
   Future<String> getNutritionGoal() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     return (box.get(_nutritionGoalKey) as String?) ?? 'maintain';
   }
 
   Future<void> setNutritionGoal(String goal) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_nutritionGoalKey, goal);
   }
 
   Future<int> getNutritionGoalDelta() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final v = box.get(_nutritionGoalDeltaKey);
     if (v is int) return v;
     if (v is num) return v.toInt();
@@ -486,13 +479,13 @@ class UserService {
   }
 
   Future<void> setNutritionGoalDelta(int percent) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_nutritionGoalDeltaKey, percent);
   }
 
   // Daily targets: steps, calories, water, sleep
   Future<int> getStepsTarget() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final v = box.get(_stepsTargetKey);
     if (v is int) return v;
     if (v is num) return v.toInt();
@@ -500,12 +493,12 @@ class UserService {
   }
 
   Future<void> setStepsTarget(int steps) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_stepsTargetKey, steps);
   }
 
   Future<int> getCaloriesTarget() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final v = box.get(_caloriesTargetKey);
     if (v is int) return v;
     if (v is num) return v.toInt();
@@ -513,12 +506,12 @@ class UserService {
   }
 
   Future<void> setCaloriesTarget(int kcal) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_caloriesTargetKey, kcal);
   }
 
   Future<int> getStandingTimeTargetMinutes() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final v = box.get(_standingTimeTargetMinKey);
     if (v is int) return v;
     if (v is num) return v.round();
@@ -526,12 +519,12 @@ class UserService {
   }
 
   Future<void> setStandingTimeTargetMinutes(int minutes) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_standingTimeTargetMinKey, minutes);
   }
 
   Future<double> getSleepTargetHours() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final v = box.get(_sleepTargetHoursKey);
     if (v is double) return v;
     if (v is num) return v.toDouble();
@@ -539,20 +532,20 @@ class UserService {
   }
 
   Future<void> setSleepTargetHours(double hours) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_sleepTargetHoursKey, hours);
   }
 
   // Preference: apply targets to today's record automatically
   Future<bool> getApplyTargetsToToday() async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     final v = box.get(_applyTargetsToTodayKey);
     if (v is bool) return v;
     return false;
   }
 
   Future<void> setApplyTargetsToToday(bool enabled) async {
-    final box = await _getUserBox;
+    final box = _getUserBox;
     await box.put(_applyTargetsToTodayKey, enabled);
   }
 
@@ -568,7 +561,7 @@ class UserService {
           .maybeSingle();
       if (existing != null) return true;
       // fallback to local check
-      final box = await _getUserBox;
+      final box = _getUserBox;
       final surveyData = box.get('survey_data');
       return surveyData != null;
     } catch (e) {
@@ -576,40 +569,49 @@ class UserService {
     }
   }
 
-  // Debug: print Hive user box path and contents
-  Future<void> debugPrintHiveInfo() async {
+  // Debug: print user box path and contents
+  Future<void> debugPrintStorageInfo() async {
     try {
-      final box = await _getUserBox;
+      final box = _getUserBox;
 
       // Box metadata
-      print('Hive box name: ${box.name}');
-      print('Hive box length: ${box.length}');
-
-      // Try to print underlying filesystem path when available (not on web)
-      try {
-        // Box.path exists on supported platforms. On web this may throw.
-        final dynamic b = box; // avoid hard dependency if path is absent
-        final path = b.path as String?; // may be null on some platforms
-        if (path != null) {
-          print('Hive box path: $path');
-        } else {
-          print(
-            'Hive storage path: <not available> (web/IndexedDB or unsupported)',
-          );
-        }
-      } catch (_) {
-        print(
-          'Hive storage path: <not available> (web/IndexedDB or unsupported)',
-        );
-      }
+      print('MemoryBox name: ${box.name}');
+      print('MemoryBox length: ${box.length}');
 
       // Print keys and values
       for (final key in box.keys) {
         final value = box.get(key);
-        print('Hive entry -> $key: $value');
+        print('MemoryBox entry -> $key: $value');
       }
     } catch (e) {
-      print('Error printing Hive debug info: $e');
+      print('Error printing MemoryBox debug info: $e');
     }
   }
+}
+
+/// A simple in-memory replacement for Hive Box
+class _MemoryBox {
+  final String name;
+  final Map<dynamic, dynamic> _data = {};
+
+  _MemoryBox(this.name);
+
+  dynamic get(dynamic key, {dynamic defaultValue}) {
+    return _data.containsKey(key) ? _data[key] : defaultValue;
+  }
+
+  Future<void> put(dynamic key, dynamic value) async {
+    _data[key] = value;
+  }
+
+  Future<void> clear() async {
+    _data.clear();
+  }
+
+  Iterable<dynamic> get keys => _data.keys;
+  Iterable<dynamic> get values => _data.values;
+  int get length => _data.length;
+
+  // Mock path for debug compatibility
+  String? get path => 'memory://$name';
 }

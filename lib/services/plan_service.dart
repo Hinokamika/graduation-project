@@ -4,9 +4,6 @@ import 'dto/plan_dto.dart';
 class PlanService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Save the plan into domain tables: workout_plan, relax_plan, and meal_plan.
-  /// Uses DTOs to transform AI output into DB rows.
-  /// Also links created rows to `user_identity` via `exercise_id` and `relax_id`.
   Future<void> saveChildTables({
     required Map<String, dynamic> survey,
     required Map<String, dynamic> plan,
@@ -50,8 +47,9 @@ class PlanService {
         }
       } on PostgrestException catch (e) {
         final code = e.code ?? '';
-        final msg = e.message ?? '';
-        if (code == '42703' || msg.contains('column') && msg.contains('user_id')) {
+        final msg = e.message;
+        if (code == '42703' ||
+            msg.contains('column') && msg.contains('user_id')) {
           final fallback = workoutInserts
               .map((m) => Map<String, dynamic>.from(m)..remove('user_id'))
               .toList();
@@ -84,7 +82,8 @@ class PlanService {
       } on PostgrestException catch (e) {
         final code = e.code ?? '';
         final msg = e.message ?? '';
-        if (code == '42703' || msg.contains('column') && msg.contains('user_id')) {
+        if (code == '42703' ||
+            msg.contains('column') && msg.contains('user_id')) {
           final fallback = relaxInserts
               .map((m) => Map<String, dynamic>.from(m)..remove('user_id'))
               .toList();
@@ -114,8 +113,9 @@ class PlanService {
       }
     } on PostgrestException catch (e) {
       final code = e.code ?? '';
-      final msg = e.message ?? '';
-      if (code == '42P01' || msg.contains('relation "meal_plan" does not exist')) {
+      final msg = e.message;
+      if (code == '42P01' ||
+          msg.contains('relation "meal_plan" does not exist')) {
         throw Exception(
           'Table meal_plan not found. Please run this SQL in Supabase to enable saving meals:\n\n'
           'create table if not exists public.meal_plan (\n'
@@ -159,6 +159,7 @@ class PlanService {
         final numVal = double.tryParse(cleaned);
         return numVal?.round();
       }
+
       final macros = plan['calorie_and_macros'];
       // Helper to pick sugar value from common keys in AI response
       dynamic _pickSugar(dynamic m) {
@@ -169,15 +170,23 @@ class PlanService {
         if (m['sugars'] != null) return m['sugars'];
         return null;
       }
+
       final dynamic sugarVal = (macros is Map) ? _pickSugar(macros) : null;
       final updatePayload = <String, dynamic>{
-        if (firstWorkoutRow != null && firstWorkoutRow['id'] != null) 'exercise_id': firstWorkoutRow['id'],
-        if (firstRelaxRow != null && firstRelaxRow['id'] != null) 'relax_id': firstRelaxRow['id'],
-        if (survey['diet_type'] != null) 'diet_type': survey['diet_type'].toString(),
-        if (macros is Map && macros['calories'] != null) 'calories': _asInt(macros['calories']),
-        if (macros is Map && macros['protein_g'] != null) 'protein': _asInt(macros['protein_g']),
-        if (macros is Map && macros['carbs_g'] != null) 'carbs': _asInt(macros['carbs_g']),
-        if (macros is Map && macros['fat_g'] != null) 'fat': _asInt(macros['fat_g']),
+        if (firstWorkoutRow != null && firstWorkoutRow['id'] != null)
+          'exercise_id': firstWorkoutRow['id'],
+        if (firstRelaxRow != null && firstRelaxRow['id'] != null)
+          'relax_id': firstRelaxRow['id'],
+        if (survey['diet_type'] != null)
+          'diet_type': survey['diet_type'].toString(),
+        if (macros is Map && macros['calories'] != null)
+          'calories': _asInt(macros['calories']),
+        if (macros is Map && macros['protein_g'] != null)
+          'protein': _asInt(macros['protein_g']),
+        if (macros is Map && macros['carbs_g'] != null)
+          'carbs': _asInt(macros['carbs_g']),
+        if (macros is Map && macros['fat_g'] != null)
+          'fat': _asInt(macros['fat_g']),
         if (sugarVal != null) 'sugar': _asInt(sugarVal),
       };
       if (existing == null) {
@@ -212,10 +221,12 @@ class PlanService {
 
   Never _throwHelpfulPolicyError(String table, PostgrestException e) {
     final code = e.code ?? '';
-    final msg = e.message ?? '';
+    final msg = e.message;
     // If table missing or RLS blocks, provide guidance
     if (code == '42P01' || msg.contains('does not exist')) {
-      throw Exception('Table $table not found. Please create it in Supabase or ensure it matches the app schema.');
+      throw Exception(
+        'Table $table not found. Please create it in Supabase or ensure it matches the app schema.',
+      );
     }
     if (code == '42703' || msg.contains('column') && msg.contains('user_id')) {
       throw Exception(
@@ -228,7 +239,8 @@ class PlanService {
         'create policy "Delete own" on public.$table for delete using (auth.uid() = user_id);',
       );
     }
-    if (msg.contains('new row violates row-level security policy') || msg.toLowerCase().contains('rls')) {
+    if (msg.contains('new row violates row-level security policy') ||
+        msg.toLowerCase().contains('rls')) {
       throw Exception(
         'RLS prevented writing to "$table". Ensure appropriate policies exist to allow authenticated users to insert/select.\n'
         'Owner-based example:\n'
