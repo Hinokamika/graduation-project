@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:final_project/services/habit_service.dart';
 import 'package:final_project/utils/text_styles.dart';
 import 'package:final_project/utils/app_colors.dart';
@@ -81,7 +82,11 @@ class _HabitHistoryPageState extends State<HabitHistoryPage>
             elevation: 0,
             backgroundColor: Colors.transparent,
             foregroundColor: Colors.white,
-            iconTheme: const IconThemeData(color: Colors.white, size: 24),
+            leading: IconButton(
+              icon: const FaIcon(FontAwesomeIcons.chevronLeft, size: 18),
+              onPressed: () => Navigator.of(context).pop(),
+              color: Colors.white,
+            ),
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(

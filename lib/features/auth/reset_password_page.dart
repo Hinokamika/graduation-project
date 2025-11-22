@@ -116,10 +116,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           width: 1,
                         ),
                       ),
-                      child: const FaIcon(
-                        FontAwesomeIcons.envelope,
-                        size: 28,
-                        color: AppColors.accent,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 21.0, vertical: 20.0),
+                        child: const FaIcon(
+                          FontAwesomeIcons.envelope,
+                          size: 28,
+                          color: AppColors.accent,
+                        ),
                       ),
                     ),
                   ),
@@ -184,8 +187,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 24),
 
                   // Message Display
                   if (_message.isNotEmpty)

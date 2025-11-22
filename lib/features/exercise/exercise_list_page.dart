@@ -142,10 +142,6 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                             'strength',
                             'cardio',
                             'stretching',
-                            'powerlifting',
-                            'strongman',
-                            'olympic_weightlifting',
-                            'plyometrics',
                           ].map((type) {
                             return ChoiceChip(
                               label: Text(type),
@@ -166,6 +162,7 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                     const SizedBox(height: 8),
                     DropdownButton<String>(
                       value: _sortBy,
+                      icon: const FaIcon(FontAwesomeIcons.chevronDown, size: 16),
                       isExpanded: true,
                       items: const [
                         DropdownMenuItem(value: 'name', child: Text('Name')),
@@ -181,17 +178,6 @@ class _ExerciseListPageState extends State<ExerciseListPage> {
                 ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedLevel = 'All';
-                      _selectedType = 'All';
-                      _sortBy = 'name';
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Clear'),
-                ),
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),

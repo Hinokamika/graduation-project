@@ -57,10 +57,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Plan Overview
-                    _buildOverviewSection(plan),
-                    const SizedBox(height: 24),
-
                     // BMI Analysis & Nutrition
                     _buildBMIAndNutritionSection(plan),
                     const SizedBox(height: 24),
@@ -69,16 +65,9 @@ class _PlanResultPageState extends State<PlanResultPage> {
                     _buildDailyPlanSection(plan),
                     const SizedBox(height: 24),
 
-                    // Grocery List
-                    _buildGroceryListSection(plan),
-                    const SizedBox(height: 24),
-
                     // Lifestyle & Recovery
                     _buildLifestyleSection(plan),
                     const SizedBox(height: 24),
-
-                    // Safety Notes
-                    _buildSafetyNotesSection(plan),
                   ],
                 ),
               ),
@@ -115,9 +104,12 @@ class _PlanResultPageState extends State<PlanResultPage> {
         );
         if (goLogin == true && mounted) {
           final signedIn = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (_) => const LoginPage(returnOnSuccess: true)),
+            MaterialPageRoute(
+              builder: (_) => const LoginPage(returnOnSuccess: true),
+            ),
           );
-          if (signedIn == true && mounted &&
+          if (signedIn == true &&
+              mounted &&
               Supabase.instance.client.auth.currentUser != null) {
             await PlanService().saveChildTables(
               survey: widget.survey,
@@ -150,51 +142,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
-  }
-
-  Widget _buildOverviewSection(Map<String, dynamic> plan) {
-    final overview = plan['plan_overview']?.toString();
-    if (overview == null || overview.isEmpty) return const SizedBox();
-
-    return EnhancedCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const FaIcon(
-                  FontAwesomeIcons.fileLines,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Plan Overview',
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.getTextPrimary(context),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            overview,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.getTextSecondary(context),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildBMIAndNutritionSection(Map<String, dynamic> plan) {
@@ -242,24 +189,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
               '$bmiValue (${bmiCategory ?? 'Unknown'})',
               FontAwesomeIcons.user,
             ),
-            if (bmiAnalysis != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.info.withOpacity(0.2)),
-                ),
-                child: Text(
-                  bmiAnalysis,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.getTextSecondary(context),
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
           ],
 
           // Macros Section
@@ -375,7 +304,7 @@ class _PlanResultPageState extends State<PlanResultPage> {
               ),
               const SizedBox(width: 12),
               Text(
-                '7-Day Plan',
+                '6-Day Plan',
                 style: AppTextStyles.titleLarge.copyWith(
                   color: AppColors.getTextPrimary(context),
                   fontWeight: FontWeight.w600,
@@ -403,72 +332,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGroceryListSection(Map<String, dynamic> plan) {
-    final groceryList = plan['grocery_list'] as List<dynamic>?;
-    if (groceryList == null || groceryList.isEmpty) return const SizedBox();
-
-    return EnhancedCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.wellness.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const FaIcon(
-                  FontAwesomeIcons.cartShopping,
-                  color: AppColors.wellness,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Shopping List',
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.getTextPrimary(context),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: groceryList
-                .map(
-                  (item) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.wellness.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.wellness.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Text(
-                      item.toString(),
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.wellness,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
         ],
       ),
     );
@@ -532,59 +395,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
               FontAwesomeIcons.userGroup,
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSafetyNotesSection(Map<String, dynamic> plan) {
-    final safetyNotes = plan['safety_notes']?.toString();
-    if (safetyNotes == null || safetyNotes.isEmpty) return const SizedBox();
-
-    return EnhancedCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const FaIcon(
-                  FontAwesomeIcons.triangleExclamation,
-                  color: AppColors.warning,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Important Notes',
-                style: AppTextStyles.titleLarge.copyWith(
-                  color: AppColors.getTextPrimary(context),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.warning.withOpacity(0.2)),
-            ),
-            child: Text(
-              safetyNotes,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.getTextSecondary(context),
-                height: 1.4,
-              ),
-            ),
-          ),
         ],
       ),
     );

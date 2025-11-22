@@ -30,10 +30,10 @@ class _SurveyPageState extends State<SurveyPage> {
 
   final List<String> _activityLevels = ['beginner', 'intermediate', 'advanced'];
 
-  final List<String> _dietTypes = [
-    'lost_weight',
-    'maintain_weight',
-    'gain_weight',
+  final List<Map<String, String>> _dietTypes = [
+    {'label': 'Lose Weight', 'value': 'lost_weight'},
+    {'label': 'Maintain Weight', 'value': 'maintain_weight'},
+    {'label': 'Gain Weight', 'value': 'gain_weight'},
   ];
 
   @override
@@ -242,12 +242,22 @@ class _SurveyPageState extends State<SurveyPage> {
                     const SizedBox(height: 20),
 
                     buildDropdown(
-                      value: _selectedDietType,
+                      value: _selectedDietType != null
+                          ? _dietTypes.firstWhere(
+                              (diet) => diet['value'] == _selectedDietType,
+                              orElse: () => {'label': '', 'value': ''},
+                            )['label']
+                          : null,
                       label: 'Diet Type',
                       icon: FontAwesomeIcons.utensils,
-                      items: _dietTypes,
-                      onChanged: (value) =>
-                          setState(() => _selectedDietType = value),
+                      items: _dietTypes.map((diet) => diet['label']!).toList(),
+                      onChanged: (value) {
+                        final selected = _dietTypes.firstWhere(
+                          (diet) => diet['label'] == value,
+                          orElse: () => {'label': '', 'value': ''},
+                        );
+                        setState(() => _selectedDietType = selected['value']);
+                      },
                     ),
                   ],
                 ),

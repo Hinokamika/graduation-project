@@ -156,9 +156,6 @@ class _UserPageState extends State<UserPage> {
                     _buildSavedPlansSection(),
                     const SizedBox(height: 32),
                   ],
-
-                  // Account Actions
-                  _buildAccountActions(),
                 ],
               ),
             ),
@@ -380,72 +377,6 @@ class _UserPageState extends State<UserPage> {
             title: 'Health Conditions',
             value: conditionsStr,
           ),
-      ],
-    );
-  }
-
-  Widget _buildAccountActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Account Actions',
-          style: AppTextStyles.subtitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // Edit Profile Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            onPressed: () {
-              // TODO: Implement edit profile functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Edit profile feature coming soon!'),
-                ),
-              );
-            },
-            child: Text(
-              'Edit Profile',
-              style: AppTextStyles.button.copyWith(color: Colors.white),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        // Logout Button
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-              side: BorderSide(color: AppColors.error),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            onPressed: _handleLogout,
-            child: Text(
-              'Log Out',
-              style: AppTextStyles.button.copyWith(color: AppColors.error),
-            ),
-          ),
-        ),
       ],
     );
   }

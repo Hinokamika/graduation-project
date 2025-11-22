@@ -166,50 +166,43 @@ class UserService {
         return;
       }
 
-      // Try to find existing row by user_id first, then by email
       final uid = _supabase.auth.currentUser?.id;
+
+      // 1. Try to update by user_id (if we have one)
       if (uid != null) {
-        final existingByUid = await _supabase
-            .from('user_identity')
-            .select('id')
-            .eq('user_id', uid)
-            .maybeSingle();
-        if (existingByUid != null) {
-          await _supabase
-              .from('user_identity')
-              .update({
-                'email': email,
-                'user_name': userName,
-                if (phone != null && phone.isNotEmpty) 'phone': phone,
-              })
-              .eq('user_id', uid);
-          return;
-        }
-      }
-
-      // Fallback: find by email
-      final existing = await _supabase
-          .from('user_identity')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
-
-      if (existing == null) {
-        await _supabase.from('user_identity').insert({
-          'user_name': userName,
-          'email': email,
-          if (uid != null) 'user_id': uid,
-          if (phone != null && phone.isNotEmpty) 'phone': phone,
-        });
-      } else {
-        await _supabase
+        final updatedByUid = await _supabase
             .from('user_identity')
             .update({
+              'email': email,
               'user_name': userName,
               if (phone != null && phone.isNotEmpty) 'phone': phone,
             })
-            .eq('email', email);
+            .eq('user_id', uid)
+            .select();
+
+        if (updatedByUid.isNotEmpty) return;
       }
+
+      // 2. Try to update by email (claim existing row)
+      final updatedByEmail = await _supabase
+          .from('user_identity')
+          .update({
+            'user_name': userName,
+            if (uid != null) 'user_id': uid,
+            if (phone != null && phone.isNotEmpty) 'phone': phone,
+          })
+          .eq('email', email)
+          .select();
+
+      if (updatedByEmail.isNotEmpty) return;
+
+      // 3. Insert (Upsert to handle race conditions on user_id)
+      await _supabase.from('user_identity').upsert({
+        'email': email,
+        'user_name': userName,
+        if (uid != null) 'user_id': uid,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+      }, onConflict: 'user_id');
     } catch (e) {
       print('Error syncing user_identity (signup): $e');
     }
@@ -257,7 +250,6 @@ class UserService {
           'weight': (surveyData['weight'] as num?)?.toDouble(),
         if (surveyData['activity_level'] != null)
           'activity_level': surveyData['activity_level'],
-        // 'health_conditions' column no longer used in user_identity
       };
 
       // Insert or update on Supabase; if user exists, include identifiers
@@ -287,13 +279,9 @@ class UserService {
                 .select('id')
                 .maybeSingle();
           }
-        } catch (_) {
-          // Fallback to upsert for rare races
-          resp = await _supabase
-              .from('user_identity')
-              .upsert(payload, onConflict: 'user_id')
-              .select('id')
-              .maybeSingle();
+        } catch (e) {
+          print('Error during survey update/insert: $e');
+          rethrow;
         }
         if (resp != null && resp['id'] != null) {
           await box.put(_userIdentityIdKey, resp['id'] as int);
@@ -361,12 +349,9 @@ class UserService {
               .maybeSingle();
         }
       } catch (e) {
-        // Fallback to upsert in case of race condition
-        resp = await _supabase
-            .from('user_identity')
-            .upsert(payload, onConflict: 'user_id')
-            .select('id')
-            .maybeSingle();
+        // Log error instead of retrying with problematic upsert
+        print('Error during survey sync update/insert: $e');
+        rethrow;
       }
 
       if (resp != null && resp['id'] is int) {

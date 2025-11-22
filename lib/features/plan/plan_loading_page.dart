@@ -14,7 +14,7 @@ class PlanLoadingPage extends StatefulWidget {
 
 class _PlanLoadingPageState extends State<PlanLoadingPage> {
   String? _error;
-  static const Duration _minLoadingDuration = Duration(seconds: 3);
+  static const Duration _minLoadingDuration = Duration(seconds: 40);
 
   @override
   void initState() {
@@ -114,17 +114,18 @@ class _PlanLoadingPageState extends State<PlanLoadingPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const FaIcon(FontAwesomeIcons.circleExclamation, color: Colors.red, size: 44),
-                    const SizedBox(height: 12),
-                    Text(
-                      _error!,
-                      textAlign: TextAlign.center,
+                    const FaIcon(
+                      FontAwesomeIcons.circleExclamation,
+                      color: Colors.red,
+                      size: 44,
                     ),
+                    const SizedBox(height: 12),
+                    Text(_error!, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _start,
                       child: const Text('Retry'),
-                    )
+                    ),
                   ],
                 ),
               ),
