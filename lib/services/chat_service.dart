@@ -19,10 +19,13 @@ class ChatService extends ChangeNotifier {
     if (kDebugMode) {
       if (url.endsWith('/mcp')) {
         debugPrint(
-            '[ChatService] CHAT_SERVER points to /mcp. The chat page expects the full chat endpoint (e.g., "/chat_health"). Current: $url');
+          '[ChatService] CHAT_SERVER points to /mcp. The chat page expects the full chat endpoint (e.g., "/chat_health"). Current: $url',
+        );
       }
       if (!url.startsWith('http')) {
-        debugPrint('[ChatService] CHAT_SERVER does not look like a valid URL: $url');
+        debugPrint(
+          '[ChatService] CHAT_SERVER does not look like a valid URL: $url',
+        );
       }
     }
     return url;
@@ -61,11 +64,11 @@ class ChatService extends ChangeNotifier {
     // Fire-and-forget insert to reduce perceived latency
     // Errors are logged but do not block the chat request
     unawaited(
-      _supabaseClient
-          .from('messages')
-          .insert(userMessagePayload)
-          .catchError((e) {
-        if (kDebugMode) debugPrint('[ChatService] insert user message failed: $e');
+      _supabaseClient.from('messages').insert(userMessagePayload).catchError((
+        e,
+      ) {
+        if (kDebugMode)
+          debugPrint('[ChatService] insert user message failed: $e');
       }),
     );
 
@@ -79,19 +82,22 @@ class ChatService extends ChangeNotifier {
       }
       final response = await _httpClient
           .post(
-        Uri.parse(_apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'messages': _conversationHistory,
-          'mode': mode.toLowerCase(),
-          'temperature': 0.2,
-        }),
-      )
+            Uri.parse(_apiUrl),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'messages': _conversationHistory,
+              'mode': mode.toLowerCase(),
+              'temperature': 0.2,
+            }),
+          )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final aiResponse = data['response'] as String;
+        var aiResponse = data['response'] as String;
+
+        // Remove asterisks (markdown formatting)
+        aiResponse = aiResponse.replaceAll('*', '');
 
         // Add AI response to conversation history
         _conversationHistory.add({'role': 'assistant', 'content': aiResponse});
@@ -105,10 +111,9 @@ class ChatService extends ChangeNotifier {
         };
         // Fire-and-forget insert of AI response
         unawaited(
-          _supabaseClient
-              .from('messages')
-              .insert(aiMessagePayload)
-              .catchError((e) {
+          _supabaseClient.from('messages').insert(aiMessagePayload).catchError((
+            e,
+          ) {
             if (kDebugMode) {
               debugPrint('[ChatService] insert AI message failed: $e');
             }
@@ -116,9 +121,11 @@ class ChatService extends ChangeNotifier {
         );
       } else {
         final snippet = response.body.length > 200
-            ? response.body.substring(0, 200) + '...'
+            ? '${response.body.substring(0, 200)}...'
             : response.body;
-        throw Exception('API request failed ${response.statusCode} @ $_apiUrl: $snippet');
+        throw Exception(
+          'API request failed ${response.statusCode} @ $_apiUrl: $snippet',
+        );
       }
     } catch (e) {
       throw Exception('Failed to get AI response: $e');
