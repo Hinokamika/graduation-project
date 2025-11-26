@@ -29,11 +29,11 @@ class _MealPageState extends State<MealPage> {
   double _fatG = 0;
   double _sugarG = 0;
 
-  double _targetKcal = 2200;
-  double _targetCarbs = 275;
-  double _targetProtein = 90;
-  double _targetFat = 73;
-  double _targetSugar = 50;
+  double _targetKcal = 0;
+  double _targetCarbs = 0;
+  double _targetProtein = 0;
+  double _targetFat = 0;
+  double _targetSugar = 0;
 
   bool _analyzingPhoto = false;
   CalorieAnalysisResult? _lastAnalysis;
@@ -140,7 +140,7 @@ class _MealPageState extends State<MealPage> {
     if (raw is! List) return [];
     // Map entries can be Map or String. Convert strings to a map with a name.
     return raw.map<Map<String, dynamic>>((e) {
-      if (e is Map) return Map<String, dynamic>.from(e as Map);
+      if (e is Map) return Map<String, dynamic>.from(e);
       return {'name': e.toString()};
     }).toList();
   }
@@ -163,16 +163,21 @@ class _MealPageState extends State<MealPage> {
     try {
       // Track current date key for day-change detection
       final now = DateTime.now();
-      final key = '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final key =
+          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
       _loadedDateKey = key;
       final map = await HealthService().fetchTodayNutrition();
       // Merge with any user-logged intake stored in Supabase
       final intake = await NutritionIntakeService().getTodayTotals();
-      map['energy_kcal'] = (map['energy_kcal'] ?? 0).toDouble() + (intake['energy_kcal'] ?? 0.0);
-      map['carbs_g'] = (map['carbs_g'] ?? 0).toDouble() + (intake['carbs_g'] ?? 0.0);
-      map['protein_g'] = (map['protein_g'] ?? 0).toDouble() + (intake['protein_g'] ?? 0.0);
+      map['energy_kcal'] =
+          (map['energy_kcal'] ?? 0).toDouble() + (intake['energy_kcal'] ?? 0.0);
+      map['carbs_g'] =
+          (map['carbs_g'] ?? 0).toDouble() + (intake['carbs_g'] ?? 0.0);
+      map['protein_g'] =
+          (map['protein_g'] ?? 0).toDouble() + (intake['protein_g'] ?? 0.0);
       map['fat_g'] = (map['fat_g'] ?? 0).toDouble() + (intake['fat_g'] ?? 0.0);
-      map['sugar_g'] = (map['sugar_g'] ?? 0).toDouble() + (intake['sugar_g'] ?? 0.0);
+      map['sugar_g'] =
+          (map['sugar_g'] ?? 0).toDouble() + (intake['sugar_g'] ?? 0.0);
       if (!mounted) return;
       setState(() {
         _energyKcal = (map['energy_kcal'] ?? 0).toDouble();
@@ -187,7 +192,11 @@ class _MealPageState extends State<MealPage> {
   void _scheduleMidnightReset() {
     _midnightTimer?.cancel();
     final now = DateTime.now();
-    final nextMidnight = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+    final nextMidnight = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).add(const Duration(days: 1));
     final duration = nextMidnight.difference(now);
     _midnightTimer = Timer(duration, () async {
       if (!mounted) return;
@@ -206,14 +215,39 @@ class _MealPageState extends State<MealPage> {
 
   Future<void> _loadTargetsFromProfile() async {
     try {
+      // 1. Try to load from Nutrition History (Supabase) - Persisted goals
+      final history = await NutritionService().getGoalHistory();
+      if (history.isNotEmpty) {
+        final latest = history.first;
+        if (mounted) {
+          setState(() {
+            _targetKcal = (latest['calories_target'] ?? 0).toDouble();
+            _targetCarbs = (latest['carbs_g'] ?? 0).toDouble();
+            _targetProtein = (latest['protein_g'] ?? 0).toDouble();
+            _targetFat = (latest['fat_g'] ?? 0).toDouble();
+            _targetSugar = (latest['sugar_g'] ?? 0).toDouble();
+          });
+
+          // Sync to in-memory cache
+          final us = UserService();
+          await us.setCaloriesTarget(_targetKcal.toInt());
+          if (latest['goal'] != null) await us.setNutritionGoal(latest['goal']);
+          if (latest['delta_percent'] != null) {
+            await us.setNutritionGoalDelta(latest['delta_percent']);
+          }
+          return;
+        }
+      }
+
+      // 2. Fallback: Calculate from Profile (if no history exists)
       final profile = await UserService().getUserProfile();
       if (!mounted) return;
 
-      // Get nutrition goal and delta from UserService
-      final goal = await UserService().getNutritionGoal(); // 'lose' | 'maintain' | 'gain'
-      final delta = await UserService().getNutritionGoalDelta(); // 10 | 15 | 20
+      // Get nutrition goal and delta from UserService (defaults if not set)
+      final goal = await UserService().getNutritionGoal();
+      final delta = await UserService().getNutritionGoalDelta();
 
-      // Compute targets using NutritionCalculator (already applies goal + delta)
+      // Compute targets using NutritionCalculator
       final t = NutritionCalculator.computeTargetsFromSurvey(
         profile ?? {},
         goal: goal,
@@ -374,7 +408,10 @@ class _MealPageState extends State<MealPage> {
                   OutlinedButton.icon(
                     onPressed: _showNutritionGoalDialog,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                     ),
                     icon: const Icon(FontAwesomeIcons.sliders, size: 14),
                     label: const Text('Set Goal'),
@@ -489,9 +526,7 @@ class _MealPageState extends State<MealPage> {
           child: TextButton.icon(
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NutritionHistoryPage(),
-                ),
+                MaterialPageRoute(builder: (_) => const NutritionHistoryPage()),
               );
             },
             icon: const Icon(FontAwesomeIcons.clockRotateLeft, size: 14),
@@ -922,7 +957,9 @@ class _MealPageState extends State<MealPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['name']?.toString() ?? item['title']?.toString() ?? 'Food item',
+                  item['name']?.toString() ??
+                      item['title']?.toString() ??
+                      'Food item',
                   style: AppTextStyles.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -933,15 +970,20 @@ class _MealPageState extends State<MealPage> {
                   Text(
                     '${item['calories']} kcal',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 11,
                     ),
                   )
-                else if (item['items'] is List && (item['items'] as List).isNotEmpty)
+                else if (item['items'] is List &&
+                    (item['items'] as List).isNotEmpty)
                   Text(
                     (item['items'] as List).map((e) => e.toString()).join(', '),
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 11,
                     ),
                     maxLines: 2,
@@ -951,24 +993,21 @@ class _MealPageState extends State<MealPage> {
                   Text(
                     item['description'].toString(),
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.6),
                       fontSize: 11,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
-      Icon(
-        FontAwesomeIcons.chevronRight,
-        size: 14,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-      ),
-    ],
-  ),
-);
-}
+    );
+  }
 
   Widget _buildSnackItem(String snack, bool isDark) {
     return Container(
@@ -1060,7 +1099,9 @@ class _MealPageState extends State<MealPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: _analyzingPhoto ? null : () => _analyzeImageFromDialog(context),
+                      onPressed: _analyzingPhoto
+                          ? null
+                          : () => _analyzeImageFromDialog(context),
                       icon: _analyzingPhoto
                           ? const SizedBox(
                               width: 16,
@@ -1184,7 +1225,11 @@ class _MealPageState extends State<MealPage> {
               children: [
                 const Icon(FontAwesomeIcons.check, color: Colors.white),
                 const SizedBox(width: 12),
-                Expanded(child: Text('${result.totalKcal.toStringAsFixed(0)} kcal analyzed')),
+                Expanded(
+                  child: Text(
+                    '${result.totalKcal.toStringAsFixed(0)} kcal analyzed',
+                  ),
+                ),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -1268,7 +1313,11 @@ class _MealPageState extends State<MealPage> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(FontAwesomeIcons.fire, color: AppColors.success, size: 16),
+                          const Icon(
+                            FontAwesomeIcons.fire,
+                            color: AppColors.success,
+                            size: 16,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '${result.totalKcal.toStringAsFixed(0)} kcal total',
@@ -1305,19 +1354,55 @@ class _MealPageState extends State<MealPage> {
                     runSpacing: 8,
                     children: [
                       if (result.carbsG != null)
-                        _macroChip(FontAwesomeIcons.leaf, 'Carbs', result.carbsG!, AppColors.primary),
+                        _macroChip(
+                          FontAwesomeIcons.leaf,
+                          'Carbs',
+                          result.carbsG!,
+                          AppColors.primary,
+                        ),
                       if (result.proteinG != null)
-                        _macroChip(FontAwesomeIcons.bolt, 'Protein', result.proteinG!, AppColors.accent),
+                        _macroChip(
+                          FontAwesomeIcons.bolt,
+                          'Protein',
+                          result.proteinG!,
+                          AppColors.accent,
+                        ),
                       if (result.fatG != null)
-                        _macroChip(FontAwesomeIcons.droplet, 'Fat', result.fatG!, AppColors.warning),
+                        _macroChip(
+                          FontAwesomeIcons.droplet,
+                          'Fat',
+                          result.fatG!,
+                          AppColors.warning,
+                        ),
                       if (result.sugarG != null)
-                        _macroChip(FontAwesomeIcons.cubes, 'Sugar', result.sugarG!, AppColors.info),
+                        _macroChip(
+                          FontAwesomeIcons.cubes,
+                          'Sugar',
+                          result.sugarG!,
+                          AppColors.info,
+                        ),
                       if (result.fiberG != null)
-                        _macroChip(FontAwesomeIcons.leaf, 'Fiber', result.fiberG!, AppColors.success),
+                        _macroChip(
+                          FontAwesomeIcons.leaf,
+                          'Fiber',
+                          result.fiberG!,
+                          AppColors.success,
+                        ),
                       if (result.saturatedFatG != null)
-                        _macroChip(FontAwesomeIcons.egg, 'Sat. Fat', result.saturatedFatG!, AppColors.error),
+                        _macroChip(
+                          FontAwesomeIcons.egg,
+                          'Sat. Fat',
+                          result.saturatedFatG!,
+                          AppColors.error,
+                        ),
                       if (result.sodiumMg != null)
-                        _macroChip(FontAwesomeIcons.water, 'Sodium', result.sodiumMg!, AppColors.calories, unit: 'mg'),
+                        _macroChip(
+                          FontAwesomeIcons.water,
+                          'Sodium',
+                          result.sodiumMg!,
+                          AppColors.calories,
+                          unit: 'mg',
+                        ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -1347,21 +1432,29 @@ class _MealPageState extends State<MealPage> {
                         children: [
                           Row(
                             children: [
-                              const Icon(FontAwesomeIcons.utensils, size: 14, color: AppColors.accent),
+                              const Icon(
+                                FontAwesomeIcons.utensils,
+                                size: 14,
+                                color: AppColors.accent,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   it.name,
                                   style: AppTextStyles.bodySmall.copyWith(
                                     fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).colorScheme.onSurface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
                                   ),
                                 ),
                               ),
                               Text(
                                 '${it.calories.toStringAsFixed(0)} kcal',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.7),
                                 ),
                               ),
                             ],
@@ -1371,7 +1464,9 @@ class _MealPageState extends State<MealPage> {
                             Text(
                               'Portion: ${it.portionSize}',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.7),
                               ),
                             ),
                           ],
@@ -1382,19 +1477,55 @@ class _MealPageState extends State<MealPage> {
                               runSpacing: 6,
                               children: [
                                 if (it.macros!.carbsG != null)
-                                  _macroChip(FontAwesomeIcons.leaf, 'Carbs', it.macros!.carbsG!, AppColors.primary),
+                                  _macroChip(
+                                    FontAwesomeIcons.leaf,
+                                    'Carbs',
+                                    it.macros!.carbsG!,
+                                    AppColors.primary,
+                                  ),
                                 if (it.macros!.proteinG != null)
-                                  _macroChip(FontAwesomeIcons.bolt, 'Protein', it.macros!.proteinG!, AppColors.accent),
+                                  _macroChip(
+                                    FontAwesomeIcons.bolt,
+                                    'Protein',
+                                    it.macros!.proteinG!,
+                                    AppColors.accent,
+                                  ),
                                 if (it.macros!.fatG != null)
-                                  _macroChip(FontAwesomeIcons.droplet, 'Fat', it.macros!.fatG!, AppColors.warning),
+                                  _macroChip(
+                                    FontAwesomeIcons.droplet,
+                                    'Fat',
+                                    it.macros!.fatG!,
+                                    AppColors.warning,
+                                  ),
                                 if (it.macros!.sugarG != null)
-                                  _macroChip(FontAwesomeIcons.cubes, 'Sugar', it.macros!.sugarG!, AppColors.info),
+                                  _macroChip(
+                                    FontAwesomeIcons.cubes,
+                                    'Sugar',
+                                    it.macros!.sugarG!,
+                                    AppColors.info,
+                                  ),
                                 if (it.macros!.fiberG != null)
-                                  _macroChip(FontAwesomeIcons.leaf, 'Fiber', it.macros!.fiberG!, AppColors.success),
+                                  _macroChip(
+                                    FontAwesomeIcons.leaf,
+                                    'Fiber',
+                                    it.macros!.fiberG!,
+                                    AppColors.success,
+                                  ),
                                 if (it.macros!.saturatedFatG != null)
-                                  _macroChip(FontAwesomeIcons.egg, 'Sat. Fat', it.macros!.saturatedFatG!, AppColors.error),
+                                  _macroChip(
+                                    FontAwesomeIcons.egg,
+                                    'Sat. Fat',
+                                    it.macros!.saturatedFatG!,
+                                    AppColors.error,
+                                  ),
                                 if (it.macros!.sodiumMg != null)
-                                  _macroChip(FontAwesomeIcons.water, 'Sodium', it.macros!.sodiumMg!, AppColors.calories, unit: 'mg'),
+                                  _macroChip(
+                                    FontAwesomeIcons.water,
+                                    'Sodium',
+                                    it.macros!.sodiumMg!,
+                                    AppColors.calories,
+                                    unit: 'mg',
+                                  ),
                               ],
                             ),
                           ],
@@ -1408,66 +1539,87 @@ class _MealPageState extends State<MealPage> {
             ),
           ),
           actions: [
-            if (result.success) ElevatedButton.icon(
-              onPressed: () async {
-                try {
-                  await NutritionIntakeService().addEntry(
-                    energyKcal: result.totalKcal,
-                    carbsG: result.carbsG,
-                    proteinG: result.proteinG,
-                    fatG: result.fatG,
-                    sugarG: result.sugarG,
-                    source: 'ai_analysis',
-                    metadata: {
-                      'reasoning': result.reasoning,
-                      if ((result.confidenceLevel ?? '').isNotEmpty)
-                        'confidence_level': result.confidenceLevel,
-                      if (result.mealQuality != null) 'meal_quality': {
-                        if (result.mealQuality!.balanceScore != null) 'balance_score': result.mealQuality!.balanceScore,
-                        if ((result.mealQuality!.notes ?? '').isNotEmpty) 'notes': result.mealQuality!.notes,
-                      },
-                      'macros': {
-                        if (result.carbsG != null) 'carbs_g': result.carbsG,
-                        if (result.proteinG != null) 'protein_g': result.proteinG,
-                        if (result.fatG != null) 'fat_g': result.fatG,
-                        if (result.sugarG != null) 'sugar_g': result.sugarG,
-                        if (result.fiberG != null) 'fiber_g': result.fiberG,
-                        if (result.saturatedFatG != null) 'saturated_fat_g': result.saturatedFatG,
-                        if (result.sodiumMg != null) 'sodium_mg': result.sodiumMg,
-                      },
-                      'items': result.items.map((e) => {
-                        'name': e.name,
-                        'calories': e.calories,
-                        if ((e.portionSize ?? '').isNotEmpty) 'portion_size': e.portionSize,
-                        if (e.macros != null) 'macros': {
-                          if (e.macros!.carbsG != null) 'carbs_g': e.macros!.carbsG,
-                          if (e.macros!.proteinG != null) 'protein_g': e.macros!.proteinG,
-                          if (e.macros!.fatG != null) 'fat_g': e.macros!.fatG,
-                          if (e.macros!.sugarG != null) 'sugar_g': e.macros!.sugarG,
-                          if (e.macros!.fiberG != null) 'fiber_g': e.macros!.fiberG,
-                          if (e.macros!.saturatedFatG != null) 'saturated_fat_g': e.macros!.saturatedFatG,
-                          if (e.macros!.sodiumMg != null) 'sodium_mg': e.macros!.sodiumMg,
+            if (result.success)
+              ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    await NutritionIntakeService().addEntry(
+                      energyKcal: result.totalKcal,
+                      carbsG: result.carbsG,
+                      proteinG: result.proteinG,
+                      fatG: result.fatG,
+                      sugarG: result.sugarG,
+                      source: 'ai_analysis',
+                      metadata: {
+                        'reasoning': result.reasoning,
+                        if ((result.confidenceLevel ?? '').isNotEmpty)
+                          'confidence_level': result.confidenceLevel,
+                        if (result.mealQuality != null)
+                          'meal_quality': {
+                            if (result.mealQuality!.balanceScore != null)
+                              'balance_score': result.mealQuality!.balanceScore,
+                            if ((result.mealQuality!.notes ?? '').isNotEmpty)
+                              'notes': result.mealQuality!.notes,
+                          },
+                        'macros': {
+                          if (result.carbsG != null) 'carbs_g': result.carbsG,
+                          if (result.proteinG != null)
+                            'protein_g': result.proteinG,
+                          if (result.fatG != null) 'fat_g': result.fatG,
+                          if (result.sugarG != null) 'sugar_g': result.sugarG,
+                          if (result.fiberG != null) 'fiber_g': result.fiberG,
+                          if (result.saturatedFatG != null)
+                            'saturated_fat_g': result.saturatedFatG,
+                          if (result.sodiumMg != null)
+                            'sodium_mg': result.sodiumMg,
                         },
-                      }).toList(),
-                    },
-                  );
-                  // Refresh today totals in UI
-                  await _loadTodayNutrition();
-                  if (!mounted) return;
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Added to Today\'s Intake')),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString())),
-                  );
-                }
-              },
-              icon: const Icon(FontAwesomeIcons.plus),
-              label: const Text("Add to Today's Intake"),
-            ),
+                        'items': result.items
+                            .map(
+                              (e) => {
+                                'name': e.name,
+                                'calories': e.calories,
+                                if ((e.portionSize ?? '').isNotEmpty)
+                                  'portion_size': e.portionSize,
+                                if (e.macros != null)
+                                  'macros': {
+                                    if (e.macros!.carbsG != null)
+                                      'carbs_g': e.macros!.carbsG,
+                                    if (e.macros!.proteinG != null)
+                                      'protein_g': e.macros!.proteinG,
+                                    if (e.macros!.fatG != null)
+                                      'fat_g': e.macros!.fatG,
+                                    if (e.macros!.sugarG != null)
+                                      'sugar_g': e.macros!.sugarG,
+                                    if (e.macros!.fiberG != null)
+                                      'fiber_g': e.macros!.fiberG,
+                                    if (e.macros!.saturatedFatG != null)
+                                      'saturated_fat_g':
+                                          e.macros!.saturatedFatG,
+                                    if (e.macros!.sodiumMg != null)
+                                      'sodium_mg': e.macros!.sodiumMg,
+                                  },
+                              },
+                            )
+                            .toList(),
+                      },
+                    );
+                    // Refresh today totals in UI
+                    await _loadTodayNutrition();
+                    if (!mounted) return;
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Added to Today\'s Intake')),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  }
+                },
+                icon: const Icon(FontAwesomeIcons.plus),
+                label: const Text("Add to Today's Intake"),
+              ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
@@ -1478,7 +1630,14 @@ class _MealPageState extends State<MealPage> {
     );
   }
 
-  Widget _macroChip(IconData icon, String label, double value, Color color, {String unit = 'g', int decimals = 0}) {
+  Widget _macroChip(
+    IconData icon,
+    String label,
+    double value,
+    Color color, {
+    String unit = 'g',
+    int decimals = 0,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -1510,10 +1669,18 @@ class _MealPageState extends State<MealPage> {
     int delta = currentDelta; // 10/15/20
     final kcController = TextEditingController(text: currentKcal.toString());
     // Pre-fill macros with current targets
-    final carbsController = TextEditingController(text: _targetCarbs.toStringAsFixed(0));
-    final proteinController = TextEditingController(text: _targetProtein.toStringAsFixed(0));
-    final fatController = TextEditingController(text: _targetFat.toStringAsFixed(0));
-    final sugarController = TextEditingController(text: _targetSugar.toStringAsFixed(0));
+    final carbsController = TextEditingController(
+      text: _targetCarbs.toStringAsFixed(0),
+    );
+    final proteinController = TextEditingController(
+      text: _targetProtein.toStringAsFixed(0),
+    );
+    final fatController = TextEditingController(
+      text: _targetFat.toStringAsFixed(0),
+    );
+    final sugarController = TextEditingController(
+      text: _targetSugar.toStringAsFixed(0),
+    );
 
     if (!mounted) return;
     await showDialog(
@@ -1535,62 +1702,65 @@ class _MealPageState extends State<MealPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  // Calories
-                  TextField(
-                    controller: kcController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(FontAwesomeIcons.fire, size: 14),
-                      labelText: 'Daily Calories Target (kcal)',
-                      hintText: 'e.g., 2200',
+                    // Calories
+                    TextField(
+                      controller: kcController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(FontAwesomeIcons.fire, size: 14),
+                        labelText: 'Daily Calories Target (kcal)',
+                        hintText: 'e.g., 2200',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Macros
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: carbsController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(FontAwesomeIcons.breadSlice, size: 14),
-                            labelText: 'Carbs (g)',
+                    const SizedBox(height: 12),
+                    // Macros
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: carbsController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(
+                                FontAwesomeIcons.breadSlice,
+                                size: 14,
+                              ),
+                              labelText: 'Carbs (g)',
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: proteinController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            prefixIcon: Icon(FontAwesomeIcons.egg, size: 14),
-                            labelText: 'Protein (g)',
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: proteinController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(FontAwesomeIcons.egg, size: 14),
+                              labelText: 'Protein (g)',
+                            ),
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: fatController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(FontAwesomeIcons.droplet, size: 14),
+                        labelText: 'Fat (g)',
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: fatController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(FontAwesomeIcons.droplet, size: 14),
-                      labelText: 'Fat (g)',
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: sugarController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(FontAwesomeIcons.cubes, size: 14),
-                      labelText: 'Sugar (g)',
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: sugarController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(FontAwesomeIcons.cubes, size: 14),
+                        labelText: 'Sugar (g)',
+                      ),
                     ),
-                  ),
-                  // (Show History moved out of modal to main page under macros)
+                    // (Show History moved out of modal to main page under macros)
                   ],
                 ),
               ),
@@ -1609,7 +1779,9 @@ class _MealPageState extends State<MealPage> {
                     }
                     // Persist to Supabase history
                     final carbs = double.tryParse(carbsController.text.trim());
-                    final protein = double.tryParse(proteinController.text.trim());
+                    final protein = double.tryParse(
+                      proteinController.text.trim(),
+                    );
                     final fat = double.tryParse(fatController.text.trim());
                     try {
                       await NutritionService().saveGoalEntry(
@@ -1623,9 +1795,9 @@ class _MealPageState extends State<MealPage> {
                       );
                     } catch (e) {
                       if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                     if (!mounted) return;
                     Navigator.of(context).pop();
@@ -1638,7 +1810,9 @@ class _MealPageState extends State<MealPage> {
                       if (protein != null) _targetProtein = protein;
                       if (fat != null) _targetFat = fat;
                       if (kcal != null) _targetKcal = kcal.toDouble();
-                      final sugar = double.tryParse(sugarController.text.trim());
+                      final sugar = double.tryParse(
+                        sugarController.text.trim(),
+                      );
                       if (sugar != null) _targetSugar = sugar;
                     });
                     if (!mounted) return;

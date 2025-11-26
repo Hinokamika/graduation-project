@@ -56,13 +56,6 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
           tooltip: 'Back',
         ),
         title: Text(name),
-        actions: [
-          IconButton(
-            onPressed: () => _addToPlan(context, name),
-            icon: const FaIcon(FontAwesomeIcons.circlePlus),
-            tooltip: 'Add to workout plan',
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

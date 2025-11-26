@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart'
 import 'package:final_project/services/health_service.dart';
 
 class UserService {
-  static const String _userBoxName = 'userBox';
   static const String _onboardingKey = 'onboardingComplete';
   static const String _userIdentityIdKey = 'user_identity_id';
   static const String _surveyDirtyKey = 'survey_dirty';
@@ -29,25 +28,15 @@ class UserService {
   static const String _workoutCurrentDayIndexKey =
       'workout_current_day_index'; // int (1-based)
 
-  // Replacement for Hive Box
-  static final _MemoryBox _userBox = _MemoryBox(_userBoxName);
+  // In-memory cache
+  static final Map<String, dynamic> _localCache = {};
 
   final SupabaseClient _supabase = Supabase.instance.client;
   static bool _listenersStarted = false;
   StreamSubscription<bool>? _connSub;
   StreamSubscription<AuthState>? _authSub;
 
-  UserService() {
-    _initHive();
-  }
-
-  Future<void> _initHive() async {
-    // No-op for memory box
-  }
-
-  _MemoryBox get _getUserBox {
-    return _userBox;
-  }
+  UserService();
 
   // Start background sync listeners for auth and connectivity
   Future<void> startSyncListeners() async {
@@ -73,9 +62,7 @@ class UserService {
     // Only request on iOS devices (not web, not Android)
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
     try {
-      final box = _getUserBox;
-      final prompted =
-          box.get(_healthPermissionPromptedKey, defaultValue: false) == true;
+      final prompted = _localCache[_healthPermissionPromptedKey] == true;
       if (prompted) return;
 
       final health = HealthService();
@@ -83,11 +70,10 @@ class UserService {
       if (!granted) {
         await health.requestPermissions();
       }
-      await box.put(_healthPermissionPromptedKey, true);
+      _localCache[_healthPermissionPromptedKey] = true;
     } catch (e) {
       try {
-        final box = _getUserBox;
-        await box.put(_healthPermissionPromptedKey, true);
+        _localCache[_healthPermissionPromptedKey] = true;
       } catch (_) {}
       print('Health permission prompt error: $e');
     }
@@ -100,13 +86,12 @@ class UserService {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
 
-      final box = _getUserBox;
-      final isDirty = box.get(_surveyDirtyKey, defaultValue: false) == true;
-      final hasLocalSurvey = box.get('survey_data') != null;
+      final isDirty = _localCache[_surveyDirtyKey] == true;
+      final hasLocalSurvey = _localCache['survey_data'] != null;
       if (!isDirty && !hasLocalSurvey) return;
 
       await syncLocalSurveyToSupabase();
-      await box.put(_surveyDirtyKey, false);
+      _localCache[_surveyDirtyKey] = false;
     } catch (_) {}
   }
 
@@ -114,8 +99,7 @@ class UserService {
   Future<bool> isOnboardingComplete() async {
     // Check local storage as fast path
     try {
-      final box = _getUserBox;
-      final localComplete = box.get(_onboardingKey, defaultValue: false);
+      final localComplete = _localCache[_onboardingKey];
       if (localComplete == true) return true;
     } catch (e) {
       print('Error checking onboarding status: $e');
@@ -138,8 +122,7 @@ class UserService {
 
   // Mark onboarding as complete (local flag)
   Future<void> markOnboardingComplete() async {
-    final box = _getUserBox;
-    await box.put(_onboardingKey, true);
+    _localCache[_onboardingKey] = true;
   }
 
   // Create or update user_identity from sign up details
@@ -150,8 +133,7 @@ class UserService {
   }) async {
     try {
       // Prefer linking the row created during survey by stored id
-      final box = _getUserBox;
-      final existingLocalId = box.get(_userIdentityIdKey) as int?;
+      final existingLocalId = _localCache[_userIdentityIdKey] as int?;
       if (existingLocalId != null) {
         await _supabase
             .from('user_identity')
@@ -210,25 +192,22 @@ class UserService {
 
   // ---- Workout progress (local) ----
   Future<int> getWorkoutCurrentDayIndex() async {
-    final box = _getUserBox;
-    final idx = box.get(_workoutCurrentDayIndexKey, defaultValue: 1);
+    final idx = _localCache[_workoutCurrentDayIndexKey];
     if (idx is int && idx >= 1) return idx;
     return 1;
   }
 
   Future<void> setWorkoutCurrentDayIndex(int index) async {
-    final box = _getUserBox;
-    await box.put(_workoutCurrentDayIndexKey, index < 1 ? 1 : index);
+    _localCache[_workoutCurrentDayIndexKey] = index < 1 ? 1 : index;
   }
 
   // Save survey data
   Future<void> saveSurveyData(Map<String, dynamic> surveyData) async {
     try {
       // Persist locally for offline reads
-      final box = _getUserBox;
-      await box.put('survey_data', surveyData);
-      await box.put(_onboardingKey, true);
-      await box.put(_surveyDirtyKey, true);
+      _localCache['survey_data'] = surveyData;
+      _localCache[_onboardingKey] = true;
+      _localCache[_surveyDirtyKey] = true;
       print('Survey data saved locally');
 
       // If not authenticated or offline, stop here. We'll sync later.
@@ -284,8 +263,8 @@ class UserService {
           rethrow;
         }
         if (resp != null && resp['id'] != null) {
-          await box.put(_userIdentityIdKey, resp['id'] as int);
-          await box.put(_surveyDirtyKey, false);
+          _localCache[_userIdentityIdKey] = resp['id'] as int;
+          _localCache[_surveyDirtyKey] = false;
         }
       } catch (e) {
         print('Supabase survey upsert failed (non-fatal): $e');
@@ -301,8 +280,7 @@ class UserService {
       final user = _supabase.auth.currentUser;
       if (user == null) return; // requires authenticated session
 
-      final box = _getUserBox;
-      final surveyData = box.get('survey_data');
+      final surveyData = _localCache['survey_data'];
       if (surveyData == null) return; // nothing to sync
 
       // Normalize to Map<String, dynamic>
@@ -355,8 +333,8 @@ class UserService {
       }
 
       if (resp != null && resp['id'] is int) {
-        await box.put(_userIdentityIdKey, resp['id'] as int);
-        await box.put(_surveyDirtyKey, false);
+        _localCache[_userIdentityIdKey] = resp['id'] as int;
+        _localCache[_surveyDirtyKey] = false;
       }
     } catch (e) {
       print('Error syncing local survey to Supabase: $e');
@@ -365,7 +343,6 @@ class UserService {
 
   // Get user profile data (Supabase first, fallback to local)
   Future<Map<String, dynamic>?> getUserProfile() async {
-    final box = _getUserBox;
     try {
       Map<String, dynamic>? row;
 
@@ -382,12 +359,12 @@ class UserService {
           row = Map<String, dynamic>.from(resp);
           final id = row['id'];
           if (id is int) {
-            await box.put(_userIdentityIdKey, id);
+            _localCache[_userIdentityIdKey] = id;
           }
         }
       } else {
         // Not logged in: try using stored Supabase id from survey
-        final localId = box.get(_userIdentityIdKey) as int?;
+        final localId = _localCache[_userIdentityIdKey] as int?;
         if (localId != null) {
           final resp = await _supabase
               .from('user_identity')
@@ -413,7 +390,7 @@ class UserService {
           // 'health_conditions' not selected from user_identity
         };
         // Cache locally for faster subsequent reads
-        await box.put('survey_data', survey);
+        _localCache['survey_data'] = survey;
         return {'survey_data': survey};
       }
     } catch (e) {
@@ -422,7 +399,7 @@ class UserService {
 
     // Fallback to local cache
     try {
-      final surveyData = box.get('survey_data');
+      final surveyData = _localCache['survey_data'];
       if (surveyData != null) {
         if (surveyData is Map) {
           final typed = Map<String, dynamic>.from(
@@ -440,98 +417,83 @@ class UserService {
 
   // Clear local user data (for logout)
   Future<void> clearLocalData() async {
-    final box = _getUserBox;
-    await box.clear();
+    _localCache.clear();
   }
 
   // Nutrition goal preferences
   Future<String> getNutritionGoal() async {
-    final box = _getUserBox;
-    return (box.get(_nutritionGoalKey) as String?) ?? 'maintain';
+    return (_localCache[_nutritionGoalKey] as String?) ?? 'maintain';
   }
 
   Future<void> setNutritionGoal(String goal) async {
-    final box = _getUserBox;
-    await box.put(_nutritionGoalKey, goal);
+    _localCache[_nutritionGoalKey] = goal;
   }
 
   Future<int> getNutritionGoalDelta() async {
-    final box = _getUserBox;
-    final v = box.get(_nutritionGoalDeltaKey);
+    final v = _localCache[_nutritionGoalDeltaKey];
     if (v is int) return v;
     if (v is num) return v.toInt();
     return 15;
   }
 
   Future<void> setNutritionGoalDelta(int percent) async {
-    final box = _getUserBox;
-    await box.put(_nutritionGoalDeltaKey, percent);
+    _localCache[_nutritionGoalDeltaKey] = percent;
   }
 
   // Daily targets: steps, calories, water, sleep
   Future<int> getStepsTarget() async {
-    final box = _getUserBox;
-    final v = box.get(_stepsTargetKey);
+    final v = _localCache[_stepsTargetKey];
     if (v is int) return v;
     if (v is num) return v.toInt();
     return 10000; // default steps
   }
 
   Future<void> setStepsTarget(int steps) async {
-    final box = _getUserBox;
-    await box.put(_stepsTargetKey, steps);
+    _localCache[_stepsTargetKey] = steps;
   }
 
   Future<int> getCaloriesTarget() async {
-    final box = _getUserBox;
-    final v = box.get(_caloriesTargetKey);
+    final v = _localCache[_caloriesTargetKey];
     if (v is int) return v;
     if (v is num) return v.toInt();
     return 2200; // default kcal
   }
 
   Future<void> setCaloriesTarget(int kcal) async {
-    final box = _getUserBox;
-    await box.put(_caloriesTargetKey, kcal);
+    _localCache[_caloriesTargetKey] = kcal;
   }
 
   Future<int> getStandingTimeTargetMinutes() async {
-    final box = _getUserBox;
-    final v = box.get(_standingTimeTargetMinKey);
+    final v = _localCache[_standingTimeTargetMinKey];
     if (v is int) return v;
     if (v is num) return v.round();
     return 720; // default 12 hours (720 minutes) standing goal - Apple Watch standard
   }
 
   Future<void> setStandingTimeTargetMinutes(int minutes) async {
-    final box = _getUserBox;
-    await box.put(_standingTimeTargetMinKey, minutes);
+    _localCache[_standingTimeTargetMinKey] = minutes;
   }
 
   Future<double> getSleepTargetHours() async {
-    final box = _getUserBox;
-    final v = box.get(_sleepTargetHoursKey);
+    final v = _localCache[_sleepTargetHoursKey];
     if (v is double) return v;
     if (v is num) return v.toDouble();
     return 8.0; // default hours
   }
 
   Future<void> setSleepTargetHours(double hours) async {
-    final box = _getUserBox;
-    await box.put(_sleepTargetHoursKey, hours);
+    _localCache[_sleepTargetHoursKey] = hours;
   }
 
   // Preference: apply targets to today's record automatically
   Future<bool> getApplyTargetsToToday() async {
-    final box = _getUserBox;
-    final v = box.get(_applyTargetsToTodayKey);
+    final v = _localCache[_applyTargetsToTodayKey];
     if (v is bool) return v;
     return false;
   }
 
   Future<void> setApplyTargetsToToday(bool enabled) async {
-    final box = _getUserBox;
-    await box.put(_applyTargetsToTodayKey, enabled);
+    _localCache[_applyTargetsToTodayKey] = enabled;
   }
 
   // Check if user profile exists in Supabase
@@ -546,8 +508,7 @@ class UserService {
           .maybeSingle();
       if (existing != null) return true;
       // fallback to local check
-      final box = _getUserBox;
-      final surveyData = box.get('survey_data');
+      final surveyData = _localCache['survey_data'];
       return surveyData != null;
     } catch (e) {
       return false;
@@ -557,46 +518,15 @@ class UserService {
   // Debug: print user box path and contents
   Future<void> debugPrintStorageInfo() async {
     try {
-      final box = _getUserBox;
-
       // Box metadata
-      print('MemoryBox name: ${box.name}');
-      print('MemoryBox length: ${box.length}');
+      print('LocalCache length: ${_localCache.length}');
 
       // Print keys and values
-      for (final key in box.keys) {
-        final value = box.get(key);
-        print('MemoryBox entry -> $key: $value');
-      }
+      _localCache.forEach((key, value) {
+        print('LocalCache entry -> $key: $value');
+      });
     } catch (e) {
-      print('Error printing MemoryBox debug info: $e');
+      print('Error printing LocalCache debug info: $e');
     }
   }
-}
-
-/// A simple in-memory replacement for Hive Box
-class _MemoryBox {
-  final String name;
-  final Map<dynamic, dynamic> _data = {};
-
-  _MemoryBox(this.name);
-
-  dynamic get(dynamic key, {dynamic defaultValue}) {
-    return _data.containsKey(key) ? _data[key] : defaultValue;
-  }
-
-  Future<void> put(dynamic key, dynamic value) async {
-    _data[key] = value;
-  }
-
-  Future<void> clear() async {
-    _data.clear();
-  }
-
-  Iterable<dynamic> get keys => _data.keys;
-  Iterable<dynamic> get values => _data.values;
-  int get length => _data.length;
-
-  // Mock path for debug compatibility
-  String? get path => 'memory://$name';
 }

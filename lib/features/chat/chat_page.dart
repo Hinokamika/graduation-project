@@ -143,18 +143,30 @@ class _ChatPageState extends State<ChatPage> {
                     );
                   }
                   final data = snapshot.data ?? [];
-                  if (data.isEmpty) {
+
+                  // Dedup messages by ID to prevent transient duplicates
+                  final uniqueMessages = <String, Message>{};
+                  for (final m in data) {
+                    uniqueMessages[m.id] = m;
+                  }
+                  final dedupedData = uniqueMessages.values.toList()
+                    ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+                  if (dedupedData.isEmpty) {
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return SingleChildScrollView(
                           physics: const BouncingScrollPhysics(),
                           child: ConstrainedBox(
-                            constraints:
-                                BoxConstraints(minHeight: constraints.maxHeight),
+                            constraints: BoxConstraints(
+                              minHeight: constraints.maxHeight,
+                            ),
                             child: Center(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 16),
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -165,10 +177,12 @@ class _ChatPageState extends State<ChatPage> {
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
-                                            AppColors.accent
-                                                .withValues(alpha: 0.1),
-                                            AppColors.accent
-                                                .withValues(alpha: 0.05),
+                                            AppColors.accent.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            AppColors.accent.withValues(
+                                              alpha: 0.05,
+                                            ),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(50),
@@ -186,7 +200,9 @@ class _ChatPageState extends State<ChatPage> {
                                       'Start Your Wellness Journey',
                                       style: AppTextStyles.titleMedium.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: AppColors.getTextPrimary(context),
+                                        color: AppColors.getTextPrimary(
+                                          context,
+                                        ),
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -194,7 +210,9 @@ class _ChatPageState extends State<ChatPage> {
                                     Text(
                                       'Ask me about nutrition, workouts, or relaxation tips!',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: AppColors.getTextTertiary(context),
+                                        color: AppColors.getTextTertiary(
+                                          context,
+                                        ),
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -208,8 +226,9 @@ class _ChatPageState extends State<ChatPage> {
                     );
                   }
                   // Show latest at bottom: reverse list + reverse listview
-                  final messages = data.reversed.toList(growable: false);
-                  final hasTyping = _sending; // show indicator while waiting for AI
+                  final messages = dedupedData.reversed.toList(growable: false);
+                  final hasTyping =
+                      _sending; // show indicator while waiting for AI
                   return ListView.builder(
                     controller: _scrollController,
                     reverse: true,
@@ -229,7 +248,11 @@ class _ChatPageState extends State<ChatPage> {
                       // Animate only for the newest bot message, not while typing,
                       // and only if we haven't animated this message id before.
                       final isNewest = dataIndex == 0;
-                      final animateText = isNewest && m.isBot && !hasTyping && !_animatedBotIds.contains(m.id);
+                      final animateText =
+                          isNewest &&
+                          m.isBot &&
+                          !hasTyping &&
+                          !_animatedBotIds.contains(m.id);
                       return _MessageBubble(
                         key: ValueKey(m.id),
                         message: m,
@@ -428,7 +451,9 @@ class _ChatPageState extends State<ChatPage> {
           Text(
             label,
             style: AppTextStyles.bodySmall.copyWith(
-              color: selected ? Colors.white : AppColors.getTextSecondary(context),
+              color: selected
+                  ? Colors.white
+                  : AppColors.getTextSecondary(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -457,7 +482,12 @@ class _MessageBubble extends StatelessWidget {
   final Message message;
   final bool animateText;
   final VoidCallback? onTypewriterComplete;
-  const _MessageBubble({super.key, required this.message, this.animateText = false, this.onTypewriterComplete});
+  const _MessageBubble({
+    super.key,
+    required this.message,
+    this.animateText = false,
+    this.onTypewriterComplete,
+  });
 
   @override
   Widget build(BuildContext context) {

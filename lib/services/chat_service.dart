@@ -90,7 +90,7 @@ class ChatService extends ChangeNotifier {
               'temperature': 0.2,
             }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 10000));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

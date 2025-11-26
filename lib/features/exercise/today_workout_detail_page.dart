@@ -42,40 +42,42 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
         final byDay = await client
             .from('workout_plan')
             .select(
-                'id,exercise_name,description,difficulty_level,exercise_category,duration_minutes,repetitions,day,created_at,finished,user_id')
+              'id,exercise_name,description,difficulty_level,exercise_category,duration_minutes,repetitions,day,created_at,finished,user_id',
+            )
             .eq('day', widget.dayLabel)
             .order('created_at', ascending: true);
-        if (byDay is List) {
-          list = byDay
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
-        }
+        list = byDay
+            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+            .toList();
       } on PostgrestException catch (e) {
         // Fallback when user_id column not present
         final byDay = await client
             .from('workout_plan')
             .select(
-                'id,exercise_name,description,difficulty_level,exercise_category,duration_minutes,repetitions,day,created_at,finished')
+              'id,exercise_name,description,difficulty_level,exercise_category,duration_minutes,repetitions,day,created_at,finished',
+            )
             .eq('day', widget.dayLabel)
             .order('created_at', ascending: true);
-        if (byDay is List) {
-          list = byDay
-              .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-              .toList();
-        }
+        list = byDay
+            .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
+            .toList();
       }
       final mapped = list
-          .map((m) => _WorkoutRow(
-                id: (m['id'] is int) ? m['id'] as int : int.tryParse('${m['id']}'),
-                name: (m['exercise_name'] ?? '').toString(),
-                description: (m['description'] ?? '').toString(),
-                difficulty: (m['difficulty_level'] ?? '').toString(),
-                category: (m['exercise_category'] ?? '').toString(),
-                durationMinutes: _safeInt(m['duration_minutes']),
-                repetitions: (m['repetitions'] ?? '').toString(),
-                finished: (m['finished'] is bool) ? m['finished'] as bool : null,
-                userId: (m['user_id'])?.toString(),
-              ))
+          .map(
+            (m) => _WorkoutRow(
+              id: (m['id'] is int)
+                  ? m['id'] as int
+                  : int.tryParse('${m['id']}'),
+              name: (m['exercise_name'] ?? '').toString(),
+              description: (m['description'] ?? '').toString(),
+              difficulty: (m['difficulty_level'] ?? '').toString(),
+              category: (m['exercise_category'] ?? '').toString(),
+              durationMinutes: _safeInt(m['duration_minutes']),
+              repetitions: (m['repetitions'] ?? '').toString(),
+              finished: (m['finished'] is bool) ? m['finished'] as bool : null,
+              userId: (m['user_id'])?.toString(),
+            ),
+          )
           .toList();
       if (!mounted) return;
       setState(() {
@@ -96,14 +98,6 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
   }
 
   Future<void> _openUpdateModal() async {
-    if (kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('MongoDB update not supported on Web in this app.'),
-        ),
-      );
-      return;
-    }
     final result = await showModalBottomSheet<_UpdateResult>(
       context: context,
       isScrollControlled: true,
@@ -119,20 +113,12 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
   }
 
   Future<void> _openExerciseDetailByName(String name) async {
-    if (kIsWeb) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Exercise details from Mongo are not supported on Web.'),
-        ),
-      );
-      return;
-    }
     try {
       final results = await MongoService.filterExercises(name: name, limit: 1);
       if (!mounted) return;
       if (results.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Exercise "$name" not found in MongoDB')),
+          SnackBar(content: Text('Exercise not found')),
         );
         return;
       }
@@ -143,48 +129,55 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to open details: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to open details: $e')));
     }
   }
 
-  Future<void> _replaceDayPlan(List<Map<String, dynamic>> selected, {bool replace = false}) async {
+  Future<void> _replaceDayPlan(
+    List<Map<String, dynamic>> selected, {
+    bool replace = false,
+  }) async {
     final client = Supabase.instance.client;
     final uid = client.auth.currentUser?.id;
 
     // Build inserts (replace instructions with AI transcript when possible)
-    final inserts = await Future.wait(selected.map((ex) async {
-      final name = (ex['name'] ?? 'Exercise').toString();
-      String? desc;
-      if (desc == null || desc.trim().isEmpty) {
-        final instructions = ex['instructions'];
-        if (instructions is List) {
-          desc = instructions.map((e) => e.toString()).join('\n');
-        } else if (instructions != null) {
-          desc = instructions.toString();
+    final inserts = await Future.wait(
+      selected.map((ex) async {
+        final name = (ex['name'] ?? 'Exercise').toString();
+        String? desc;
+        if (desc == null || desc.trim().isEmpty) {
+          final instructions = ex['instructions'];
+          if (instructions is List) {
+            desc = instructions.map((e) => e.toString()).join('\n');
+          } else if (instructions != null) {
+            desc = instructions.toString();
+          }
         }
-      }
-      final level = (ex['level'] ?? '').toString();
-      final type = (ex['type'] ?? ex['exercise_type'] ?? '').toString();
-      final dto = WorkoutPlanInsertDTO(
-        exerciseName: name,
-        description: desc,
-        difficultyLevel: level.isEmpty ? null : level,
-        exerciseCategory: type.isEmpty ? null : type,
-        durationMinutes: null,
-        repetitions: '3x10',
-        userId: uid ?? '',
-        day: widget.dayLabel,
-      );
-      return dto.toMap();
-    }));
+        final level = (ex['level'] ?? '').toString();
+        final type = (ex['type'] ?? ex['exercise_type'] ?? '').toString();
+        final dto = WorkoutPlanInsertDTO(
+          exerciseName: name,
+          description: desc,
+          difficultyLevel: level.isEmpty ? null : level,
+          exerciseCategory: type.isEmpty ? null : type,
+          durationMinutes: null,
+          repetitions: '3x10',
+          userId: uid ?? '',
+          day: widget.dayLabel,
+        );
+        return dto.toMap();
+      }),
+    );
 
     try {
       if (replace) {
         // First, try to delete existing user rows for this day by their IDs (leave legacy rows)
         final existingIds = _rows
-            .where((r) => (uid != null && uid.isNotEmpty) ? r.userId == uid : true)
+            .where(
+              (r) => (uid != null && uid.isNotEmpty) ? r.userId == uid : true,
+            )
             .map((r) => r.id)
             .whereType<int>()
             .toList();
@@ -208,7 +201,8 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
                 .eq('user_id', uid)
                 .eq('day', widget.dayLabel);
           } on PostgrestException catch (e) {
-            if (e.code == '42703' || (e.message).toString().contains('user_id')) {
+            if (e.code == '42703' ||
+                (e.message).toString().contains('user_id')) {
               // If user_id not present, skip fallback to avoid removing legacy rows.
             } else {
               rethrow;
@@ -243,9 +237,9 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
     }
   }
 
@@ -270,12 +264,14 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
       _updated = true;
       await _load();
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Exercise deleted')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Exercise deleted')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
     }
   }
 
@@ -287,49 +283,52 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
         return false;
       },
       child: Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
-          onPressed: () => Navigator.of(context).pop(_updated),
-          tooltip: 'Back',
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
+            onPressed: () => Navigator.of(context).pop(_updated),
+            tooltip: 'Back',
+          ),
+          title: Text("Today's Workout • ${widget.dayLabel}"),
+          actions: [
+            IconButton(
+              tooltip: 'Update from MongoDB',
+              icon: const FaIcon(FontAwesomeIcons.penToSquare),
+              onPressed: _openUpdateModal,
+            ),
+          ],
         ),
-        title: Text("Today's Workout • ${widget.dayLabel}"),
-        actions: [
-          IconButton(
-            tooltip: 'Update from MongoDB',
-            icon: const FaIcon(FontAwesomeIcons.penToSquare),
-            onPressed: _openUpdateModal,
-          )
-        ],
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    _error!,
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.getErrorColor(context)),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  _error!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.getErrorColor(context),
                   ),
-                )
-              : (_rows.isEmpty
+                ),
+              )
+            : (_rows.isEmpty
                   ? Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const FaIcon(FontAwesomeIcons.circleInfo,
-                                size: 28, color: AppColors.textLight),
+                            const FaIcon(
+                              FontAwesomeIcons.circleInfo,
+                              size: 28,
+                              color: AppColors.textLight,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'No exercises found for this day.',
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.8),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.8),
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -338,148 +337,176 @@ class _TodayWorkoutDetailPageState extends State<TodayWorkoutDetailPage> {
                       ),
                     )
                   : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _rows.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (ctx, i) {
-                    final r = _rows[i];
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: () => _openExerciseDetailByName(r.name),
-                      child: Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Theme.of(context).brightness == Brightness.dark
-                            ? Border.all(color: Theme.of(context).dividerColor)
-                            : null,
-                        boxShadow:
-                            Theme.of(context).brightness == Brightness.dark
-                                ? []
-                                : [
-                                    BoxShadow(
-                                      color: AppColors.divider
-                                          .withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
+                      itemCount: _rows.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, i) {
+                        final r = _rows[i];
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _openExerciseDetailByName(r.name),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Border.all(
+                                      color: Theme.of(context).dividerColor,
                                     )
-                                  ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: (r.finished ?? false)
-                                      ? AppColors.success
-                                      : Theme.of(context).dividerColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: (r.finished ?? false)
-                                    ? Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 5.0),
-                                      child: const FaIcon(
-                                          FontAwesomeIcons.check,
-                                          color: Colors.white,
-                                          size: 14,
+                                  : null,
+                              boxShadow:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? []
+                                  : [
+                                      BoxShadow(
+                                        color: AppColors.divider.withValues(
+                                          alpha: 0.3,
                                         ),
-                                    )
-                                    : null,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            r.name,
-                                            style: AppTextStyles.bodyLarge
-                                                .copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    if (r.description != null &&
-                                        r.description!.isNotEmpty)
-                                      Text(
-                                        r.description!,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurface
-                                              .withOpacity(0.8),
-                                        ),
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: (r.finished ?? false)
+                                            ? AppColors.success
+                                            : Theme.of(context).dividerColor,
+                                        shape: BoxShape.circle,
                                       ),
-                                    const SizedBox(height: 6),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 6,
-                                      children: [
-                                        if ((r.category ?? '').isNotEmpty)
-                                          _chip(r.category!, AppColors.accent),
-                                        if ((r.difficulty ?? '').isNotEmpty)
-                                          _chip(r.difficulty!, AppColors.success),
-                                        
-                                      ],
+                                      child: (r.finished ?? false)
+                                          ? Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 5.0,
+                                                    horizontal: 5.0,
+                                                  ),
+                                              child: const FaIcon(
+                                                FontAwesomeIcons.check,
+                                                color: Colors.white,
+                                                size: 14,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  r.name,
+                                                  style: AppTextStyles.bodyLarge
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 6),
+                                          if (r.description != null &&
+                                              r.description!.isNotEmpty)
+                                            Text(
+                                              r.description!,
+                                              style: AppTextStyles.bodySmall
+                                                  .copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withOpacity(0.8),
+                                                  ),
+                                            ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 8,
+                                            runSpacing: 6,
+                                            children: [
+                                              if ((r.category ?? '').isNotEmpty)
+                                                _chip(
+                                                  r.category!,
+                                                  AppColors.accent,
+                                                ),
+                                              if ((r.difficulty ?? '')
+                                                  .isNotEmpty)
+                                                _chip(
+                                                  r.difficulty!,
+                                                  AppColors.success,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      tooltip: 'Delete exercise',
+                                      icon: const FaIcon(
+                                        FontAwesomeIcons.trashCan,
+                                        size: 18,
+                                      ),
+                                      color: AppColors.error,
+                                      onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text(
+                                              'Delete exercise?',
+                                            ),
+                                            content: Text(
+                                              'Remove "${r.name}" from ${widget.dayLabel}?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(
+                                                  ctx,
+                                                ).pop(false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColors.error,
+                                                  foregroundColor: Colors.white,
+                                                ),
+                                                onPressed: () =>
+                                                    Navigator.of(ctx).pop(true),
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          await _deleteWorkoutRow(r);
+                                        }
+                                      },
                                     ),
                                   ],
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                tooltip: 'Delete exercise',
-                                icon: const FaIcon(FontAwesomeIcons.trashCan, size: 18),
-                                color: AppColors.error,
-                                onPressed: () async {
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Delete exercise?'),
-                                      content: Text('Remove "${r.name}" from ${widget.dayLabel}?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-                                          onPressed: () => Navigator.of(ctx).pop(true),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                  if (confirm == true) {
-                                    await _deleteWorkoutRow(r);
-                                  }
-                                },
-                              )
-                            ],
-                          )
-                        ],
-                      ),
-                      ),
-                    );
-                  },
-                )),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openUpdateModal,
-        icon: const FaIcon(FontAwesomeIcons.penToSquare),
-        label: const Text('Update'),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    )),
       ),
-    ),
     );
   }
 
@@ -630,12 +657,15 @@ class _UpdateWorkoutModalState extends State<_UpdateWorkoutModal> {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Row(
                   children: [
-                    Text('Update ${widget.dayLabel}', style: AppTextStyles.subtitle),
+                    Text(
+                      'Update ${widget.dayLabel}',
+                      style: AppTextStyles.subtitle,
+                    ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: FaIcon(FontAwesomeIcons.x, size: 22),
                       onPressed: () => Navigator.of(context).pop(),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -659,39 +689,57 @@ class _UpdateWorkoutModalState extends State<_UpdateWorkoutModal> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (_types.isNotEmpty) ...[
-                        Text('Type', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          'Type',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            ..._types.map((t) => FilterChip(
-                                  label: Text(t),
-                                  selected: _selectedType == t,
-                                  onSelected: (sel) async {
-                                    setState(() => _selectedType = sel ? t : null);
-                                    await _applyFilters();
-                                  },
-                                )),
+                            ..._types.map(
+                              (t) => FilterChip(
+                                label: Text(t),
+                                selected: _selectedType == t,
+                                onSelected: (sel) async {
+                                  setState(
+                                    () => _selectedType = sel ? t : null,
+                                  );
+                                  await _applyFilters();
+                                },
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                       ],
                       if (_levels.isNotEmpty) ...[
-                        Text('Level', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          'Level',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            ..._levels.map((l) => FilterChip(
-                                  label: Text(l),
-                                  selected: _selectedLevel == l,
-                                  onSelected: (sel) async {
-                                    setState(() => _selectedLevel = sel ? l : null);
-                                    await _applyFilters();
-                                  },
-                                )),
+                            ..._levels.map(
+                              (l) => FilterChip(
+                                label: Text(l),
+                                selected: _selectedLevel == l,
+                                onSelected: (sel) async {
+                                  setState(
+                                    () => _selectedLevel = sel ? l : null,
+                                  );
+                                  await _applyFilters();
+                                },
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -717,43 +765,44 @@ class _UpdateWorkoutModalState extends State<_UpdateWorkoutModal> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _error != null
-                        ? Center(child: Text(_error!))
-                        : ListView.separated(
-                            controller: controller,
-                            itemCount: _items.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
-                            itemBuilder: (ctx, i) {
-                              final ex = _items[i];
-                              final name = (ex['name'] ?? 'Exercise').toString();
-                              final type = (ex['type'] ?? ex['exercise_type'] ?? '')
-                                  .toString();
-                              final level = (ex['level'] ?? '').toString();
-                              final selected = _selectedIdx.contains(i);
-                              return CheckboxListTile(
-                                value: selected,
-                                onChanged: (v) {
-                                  setState(() {
-                                    if (v == true) {
-                                      _selectedIdx.add(i);
-                                    } else {
-                                      _selectedIdx.remove(i);
-                                    }
-                                  });
-                                },
-                                title: Text(name),
-                                subtitle: Wrap(
-                                  spacing: 6,
-                                  children: [
-                                    if (type.isNotEmpty) Text(type),
-                                    if (level.isNotEmpty)
-                                      Text('• $level',
-                                          style: const TextStyle(
-                                              color: Colors.grey)),
-                                  ],
-                                ),
-                              );
+                    ? Center(child: Text(_error!))
+                    : ListView.separated(
+                        controller: controller,
+                        itemCount: _items.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (ctx, i) {
+                          final ex = _items[i];
+                          final name = (ex['name'] ?? 'Exercise').toString();
+                          final type = (ex['type'] ?? ex['exercise_type'] ?? '')
+                              .toString();
+                          final level = (ex['level'] ?? '').toString();
+                          final selected = _selectedIdx.contains(i);
+                          return CheckboxListTile(
+                            value: selected,
+                            onChanged: (v) {
+                              setState(() {
+                                if (v == true) {
+                                  _selectedIdx.add(i);
+                                } else {
+                                  _selectedIdx.remove(i);
+                                }
+                              });
                             },
-                          ),
+                            title: Text(name),
+                            subtitle: Wrap(
+                              spacing: 6,
+                              children: [
+                                if (type.isNotEmpty) Text(type),
+                                if (level.isNotEmpty)
+                                  Text(
+                                    '• $level',
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -798,17 +847,20 @@ class _UpdateWorkoutModalState extends State<_UpdateWorkoutModal> {
                                         .map((i) => _items[i])
                                         .toList(growable: false);
                                     Navigator.of(context).pop(
-                                      _UpdateResult(selected, replace: _replace),
+                                      _UpdateResult(
+                                        selected,
+                                        replace: _replace,
+                                      ),
                                     );
                                   },
                             child: const Text('Save'),
                           ),
-                        )
+                        ),
                       ],
-                    )
+                    ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         );
