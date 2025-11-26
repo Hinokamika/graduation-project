@@ -14,7 +14,7 @@ class PlanLoadingPage extends StatefulWidget {
 
 class _PlanLoadingPageState extends State<PlanLoadingPage> {
   String? _error;
-  static const Duration _minLoadingDuration = Duration(seconds: 40);
+  static const Duration _minLoadingDuration = Duration(seconds: 60);
 
   @override
   void initState() {

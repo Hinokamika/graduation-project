@@ -405,13 +405,6 @@ class _PlanResultPageState extends State<PlanResultPage> {
       padding: const EdgeInsets.all(24.0),
       child: Row(
         children: [
-          Expanded(
-            child: EnhancedButton(
-              text: 'Back',
-              onPressed: _saving ? null : () => Navigator.of(context).pop(),
-              isOutlined: true,
-            ),
-          ),
           const SizedBox(width: 16),
           Expanded(
             child: EnhancedButton(

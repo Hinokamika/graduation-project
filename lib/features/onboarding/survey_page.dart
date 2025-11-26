@@ -146,7 +146,7 @@ class _SurveyPageState extends State<SurveyPage> {
                             validator: (value) {
                               if (value?.isEmpty ?? true) return 'Required';
                               final age = int.tryParse(value!);
-                              if (age == null || age < 1 || age > 120) {
+                              if (age == null || age < 1 || age > 100) {
                                 return 'Enter valid age';
                               }
                               return null;
@@ -198,8 +198,7 @@ class _SurveyPageState extends State<SurveyPage> {
                               if (value?.isEmpty ?? true) return 'Required';
                               final height = double.tryParse(value!);
                               if (height == null ||
-                                  height < 50 ||
-                                  height > 300) {
+                                  height < 50 ) {
                                 return 'Enter valid height';
                               }
                               return null;
@@ -219,8 +218,7 @@ class _SurveyPageState extends State<SurveyPage> {
                               if (value?.isEmpty ?? true) return 'Required';
                               final weight = double.tryParse(value!);
                               if (weight == null ||
-                                  weight < 20 ||
-                                  weight > 500) {
+                                  weight < 20) {
                                 return 'Enter valid weight';
                               }
                               return null;

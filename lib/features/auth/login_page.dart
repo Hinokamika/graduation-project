@@ -46,12 +46,14 @@ class _LoginPageState extends State<LoginPage> {
       );
       // Kick off non-critical post-login work in background to avoid blocking UI
       final userService = UserService();
-      unawaited(Future(() async {
-        try {
-          await userService.markOnboardingComplete();
-          await userService.syncLocalSurveyToSupabase();
-        } catch (_) {}
-      }));
+      unawaited(
+        Future(() async {
+          try {
+            await userService.markOnboardingComplete();
+            await userService.syncLocalSurveyToSupabase();
+          } catch (_) {}
+        }),
+      );
 
       if (!mounted) return;
       if (widget.returnOnSuccess) {
@@ -62,8 +64,19 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on AuthException catch (e) {
       if (mounted) {
+        // Parse Supabase error messages and show user-friendly messages
+        String errorMessage = e.message;
+
+        if (e.message.toLowerCase().contains('invalid login credentials')) {
+          errorMessage = 'Wrong email or password. Please try again.';
+        } 
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     } catch (e) {
@@ -72,6 +85,7 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(
             content: Text('An unexpected error occurred: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -131,7 +145,10 @@ class _LoginPageState extends State<LoginPage> {
                   hintStyle: AppTextStyles.hint,
                   // Use themed fill from InputDecorationTheme
                   prefixIcon: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13.0,
+                      vertical: 13.0,
+                    ),
                     child: const FaIcon(
                       FontAwesomeIcons.envelope,
                       color: AppColors.textLight,
@@ -182,7 +199,10 @@ class _LoginPageState extends State<LoginPage> {
                   hintStyle: AppTextStyles.hint,
                   // Use themed fill from InputDecorationTheme
                   prefixIcon: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 13.0, vertical: 13.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13.0,
+                      vertical: 13.0,
+                    ),
                     child: const FaIcon(
                       FontAwesomeIcons.lock,
                       color: AppColors.textLight,
